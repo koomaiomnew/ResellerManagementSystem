@@ -1,4 +1,4 @@
-package com.rms.backend.entity;
+package com.rms.backend.product.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
