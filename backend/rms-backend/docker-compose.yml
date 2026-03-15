@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres-db:
+    image: postgres:16.13
+    container_name: rms-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: dev_peapea
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: bootcamp_db
+    ports:
+      - "5433:5432" # เอาพอร์ต 5433 ของเครื่องเรา ไปเชื่อมกับ 5432 ของ Docker
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

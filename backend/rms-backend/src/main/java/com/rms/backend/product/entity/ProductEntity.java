@@ -1,5 +1,4 @@
-package com.rms.backend.entity;
-
+package com.rms.backend.product.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,33 +6,36 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "products")
 public class ProductEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // บอกให้รู้ว่านี่คือ SERIAL รันเลขให้อัตโนมัติ
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    @Column(nullable = false)
     private String name;
 
     @Column(name = "image_url")
     private String imageUrl;
 
-    @Column(name = "cost_price")
-    private Double costPrice;
+    @Column(name = "cost_price", nullable = false)
+    private BigDecimal costPrice;
 
-    @Column(name = "min_price")
-    private Double minPrice;
+    @Column(name = "min_price", nullable = false)
+    private BigDecimal minPrice;
 
     private Integer stock;
 
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -53,19 +55,19 @@ public class ProductEntity {
         this.imageUrl = imageUrl;
     }
 
-    public Double getCostPrice() {
+    public BigDecimal getCostPrice() {
         return costPrice;
     }
 
-    public void setCostPrice(Double costPrice) {
+    public void setCostPrice(BigDecimal costPrice) {
         this.costPrice = costPrice;
     }
 
-    public Double getMinPrice() {
+    public BigDecimal getMinPrice() {
         return minPrice;
     }
 
-    public void setMinPrice(Double minPrice) {
+    public void setMinPrice(BigDecimal minPrice) {
         this.minPrice = minPrice;
     }
 
