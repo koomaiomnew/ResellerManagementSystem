@@ -5,8 +5,17 @@ public class ProductReq {
     private Long id;
     private String name;
     private String imageUrl;
+    private BigDecimal costPrice;
     private BigDecimal minPrice;
     private Integer stock;
+
+    public BigDecimal getCostPrice() {
+        return costPrice;
+    }
+
+    public void setCostPrice(BigDecimal costPrice) {
+        this.costPrice = costPrice;
+    }
 
     public Long getId() {
         return id;

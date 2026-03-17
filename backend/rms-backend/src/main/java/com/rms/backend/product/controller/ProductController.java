@@ -1,7 +1,6 @@
 package com.rms.backend.product.controller;
+
 import com.rms.backend.product.dto.ProductReq;
-import com.rms.backend.product.dto.ProductReqDto;
-import com.rms.backend.product.entity.ProductEntity;
 import com.rms.backend.product.service.ProductService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,36 +13,34 @@ public class ProductController {
 
     private final ProductService productService;
 
-    //Constructor Injection
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
 
-    @GetMapping("/get")
+    @GetMapping
     public ResponseEntity<List<ProductReq>> getProducts() {
-        List<ProductReq> products = productService.getAllProducts();
-        return ResponseEntity.ok(products);
+        return ResponseEntity.ok(productService.getAllProducts());
     }
 
-    @GetMapping("/get/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<ProductReq> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<ProductReq> createProduct(@RequestBody ProductReqDto request) {
+    @PostMapping
+    public ResponseEntity<ProductReq> createProduct(@RequestBody ProductReq request) {
         return ResponseEntity.ok(productService.createProduct(request));
     }
 
-    @PostMapping("/update/{id}")
-    public ResponseEntity<ProductReq> updateProduct(@PathVariable Long id, @RequestBody ProductReqDto request) {
+    // 🔥 เปลี่ยนเป็น PUT สำหรับการ Update
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductReq> updateProduct(@PathVariable Long id, @RequestBody ProductReq request) {
         return ResponseEntity.ok(productService.updateProduct(id, request));
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ProductReq> deleteProduct(@PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok().build();
     }
-
 }
