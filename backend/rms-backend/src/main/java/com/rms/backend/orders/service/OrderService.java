@@ -122,4 +122,10 @@ public class OrderService {
 
         return order;
     }
+
+    @Transactional
+    public void addProfitToReseller(Long userId, Long orderId, BigDecimal profit) {
+        // TODO: ในอนาคตต้องเขียนคำสั่งบันทึกลงตาราง wallets และ wallet_logs [cite: 249]
+        System.out.println("ระบบจำลอง: เพิ่มกำไรจำนวน " + profit + " บาท ให้ User ID: " + userId + " จากออเดอร์: " + orderId);
+    }
 }

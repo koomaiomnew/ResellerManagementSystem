@@ -6,10 +6,20 @@ public class UserReq {
     private Long id;
     private String name;
     private String email;
+    private String password;
     private String role;
     private String status;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS Z")
     private OffsetDateTime createdAt;
+
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     public Long getId() {
         return id;

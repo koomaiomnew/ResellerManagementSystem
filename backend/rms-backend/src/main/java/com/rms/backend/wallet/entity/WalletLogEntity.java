@@ -1,9 +1,9 @@
-// ไฟล์: WalletLogEntity.java
 package com.rms.backend.wallet.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "wallet_logs")
@@ -18,11 +18,12 @@ public class WalletLogEntity {
     @Column(name = "order_id")
     private Long orderId;
 
-    @Column(name = "amount", nullable = false)
+    @Column(name = "amount")
     private BigDecimal amount;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private OffsetDateTime createdAt;
 
     public Long getId() {
         return id;
@@ -56,11 +57,11 @@ public class WalletLogEntity {
         this.amount = amount;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 }
