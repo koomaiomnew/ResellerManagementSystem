@@ -32,10 +32,34 @@ public class ShopController {
         }
     }
 
+    // 3. ดึงสินค้าในร้านไปโชว์ (ดึงผ่าน Slug เพื่อความสวยงามของ URL หน้าบ้าน)
     @GetMapping("/{shopSlug}")
     public ResponseEntity<?> getShopProductsBySlug(@PathVariable String shopSlug) {
         try {
             return ResponseEntity.ok(shopService.getProductsByShopSlug(shopSlug));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
+    @DeleteMapping("/{shopId}/products/{productId}")
+    public ResponseEntity<?> removeProductFromShop(
+            @PathVariable Long shopId,
+            @PathVariable Long productId) {
+        try {
+            shopService.removeProductFromShop(shopId, productId);
+            return ResponseEntity.ok("ลบสินค้าออกจากหน้าร้านเรียบร้อยแล้ว");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteShop(@PathVariable Long id) {
+        try {
+            shopService.deleteShop(id);
+            return ResponseEntity.ok("ลบร้านค้าเรียบร้อยแล้ว");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

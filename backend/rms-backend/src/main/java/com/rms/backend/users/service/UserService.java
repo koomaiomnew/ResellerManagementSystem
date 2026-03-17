@@ -2,7 +2,7 @@ package com.rms.backend.users.service;
 import com.rms.backend.users.dto.AuthReq;
 import com.rms.backend.users.dto.UserReq;
 import com.rms.backend.users.entity.UserEntity;
-import com.rms.backend.users.repository.UserReporitory;
+import com.rms.backend.users.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -10,9 +10,9 @@ import java.util.List;
 
 @Service
 public class UserService {
-    private final UserReporitory userRepository;
+    private final UserRepository userRepository;
 
-    public UserService(UserReporitory userRepository) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -48,7 +48,6 @@ public class UserService {
         entity.setRole(request.getRole());
         entity.setStatus(request.getStatus());
         entity.setCreatedAt(request.getCreatedAt());
-
         UserEntity saveUser = userRepository.save(entity);
         return  mapToDto(saveUser);
     }
@@ -58,9 +57,9 @@ public class UserService {
                 .orElseThrow(()-> new RuntimeException("ไม่พบชื่อผู้ใช้" + id));
         entity.setName(request.getName());
         entity.setEmail(request.getEmail());
+        entity.setPassword(request.getPassword());
         entity.setRole(request.getRole());
         entity.setStatus(request.getStatus());
-        entity.setCreatedAt(request.getCreatedAt());
         UserEntity saveUser = userRepository.save(entity);
         return  mapToDto(saveUser);
     }

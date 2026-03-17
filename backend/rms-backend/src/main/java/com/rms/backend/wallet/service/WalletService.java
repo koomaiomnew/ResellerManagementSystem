@@ -6,31 +6,35 @@ import com.rms.backend.wallet.repository.WalletLogRepository;
 import com.rms.backend.wallet.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 @Service
 public class WalletService {
+
     @Autowired private WalletRepository walletRepository;
     @Autowired private WalletLogRepository walletLogRepository;
 
-    // ฟังก์ชันเพิ่มเงินให้ตัวแทน (เรียกใช้ตอนสั่งซื้อสำเร็จ)
-    public void addProfitToReseller(Long userId, Long orderId, BigDecimal profitAmount) {
-        if (profitAmount.compareTo(BigDecimal.ZERO) > 0) {
-            WalletEntity wallet = walletRepository.findById(userId).orElse(new WalletEntity());
-            if (wallet.getUserId() == null) {
-                wallet.setUserId(userId);
-                wallet.setBalance(BigDecimal.ZERO);
-            }
+    @Transactional
+    public void addProfitToReseller(Long userId, Long orderId, BigDecimal profit) {
+        // 1. ดึงกระเป๋าเงิน (ถ้าไม่มีให้สร้างใหม่)
+        WalletEntity wallet = walletRepository.findById(userId)
+                .orElseGet(() -> {
+                    WalletEntity newWallet = new WalletEntity();
+                    newWallet.setUserId(userId);
+                    newWallet.setBalance(BigDecimal.ZERO);
+                    return walletRepository.save(newWallet);
+                });
 
-            wallet.setBalance(wallet.getBalance().add(profitAmount));
-            walletRepository.save(wallet);
+        // 2. บวกเงินเข้าไปในยอดคงเหลือ
+        wallet.setBalance(wallet.getBalance().add(profit));
+        walletRepository.save(wallet);
 
-            WalletLogEntity log = new WalletLogEntity();
-            log.setUserId(userId);
-            log.setOrderId(orderId);
-            log.setAmount(profitAmount);
-            walletLogRepository.save(log);
-        }
+        // 3. บันทึกประวัติเงินเข้า (Wallet Log)
+        WalletLogEntity log = new WalletLogEntity();
+        log.setUserId(userId);
+        log.setOrderId(orderId);
+        log.setAmount(profit);
+        walletLogRepository.save(log);
     }
 }
