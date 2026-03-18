@@ -1,44 +1,21 @@
-package com.rms.backend.orders.entity;
+package com.rms.backend.orders.dto;
 
 import lombok.Data;
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-@Entity
-@Table(name = "orders")
-public class OrderEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class OrderRes {
     private Long id;
-
-    @Column(name = "order_number", unique = true, nullable = false)
     private String orderNumber;
-
-    @Column(name = "shop_id")
-    private Long shopId;
-
-    @Column(name = "customer_name", nullable = false)
     private String customerName;
-
-    @Column(nullable = false)
     private String address;
-
-    @Column(nullable = false)
     private String phone;
-
-    @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
-
-    @Column(name = "reseller_profit", nullable = false)
-    private BigDecimal resellerProfit;
-
-    private String status = "ชำระเงินแล้ว";
-
-    @Column(name = "created_at", insertable = false, updatable = false)
+    private String status;
     private LocalDateTime createdAt;
+    private List<OrderItemRes> items;
 
     public Long getId() {
         return id;
@@ -54,14 +31,6 @@ public class OrderEntity {
 
     public void setOrderNumber(String orderNumber) {
         this.orderNumber = orderNumber;
-    }
-
-    public Long getShopId() {
-        return shopId;
-    }
-
-    public void setShopId(Long shopId) {
-        this.shopId = shopId;
     }
 
     public String getCustomerName() {
@@ -96,14 +65,6 @@ public class OrderEntity {
         this.totalAmount = totalAmount;
     }
 
-    public BigDecimal getResellerProfit() {
-        return resellerProfit;
-    }
-
-    public void setResellerProfit(BigDecimal resellerProfit) {
-        this.resellerProfit = resellerProfit;
-    }
-
     public String getStatus() {
         return status;
     }
@@ -118,5 +79,13 @@ public class OrderEntity {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public List<OrderItemRes> getItems() {
+        return items;
+    }
+
+    public void setItems(List<OrderItemRes> items) {
+        this.items = items;
     }
 }

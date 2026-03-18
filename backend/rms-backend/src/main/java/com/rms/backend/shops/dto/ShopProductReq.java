@@ -1,10 +1,31 @@
 package com.rms.backend.shops.dto;
 
+import com.rms.backend.product.entity.ProductEntity;
+
 import java.math.BigDecimal;
 
 public class ShopProductReq {
     private Long productId;
     private BigDecimal sellingPrice;
+    private String imageUrl;
+    private String name;
+
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 
     public Long getProductId() {
         return productId;

@@ -1,23 +1,53 @@
 package com.rms.backend.orders.dto;
 
+import lombok.Data;
 import java.util.List;
 
+@Data
 public class OrderReq {
     private Long shopId;
+    private String customerName;
+    private String address;
+    private String phone;
     private List<OrderItemReq> items;
 
-    public Long getShopId() { return shopId; }
-    public void setShopId(Long shopId) { this.shopId = shopId; }
-    public List<OrderItemReq> getItems() { return items; }
-    public void setItems(List<OrderItemReq> items) { this.items = items; }
+    public Long getShopId() {
+        return shopId;
+    }
 
-    public static class OrderItemReq {
-        private Long productId;
-        private Integer quantity;
+    public void setShopId(Long shopId) {
+        this.shopId = shopId;
+    }
 
-        public Long getProductId() { return productId; }
-        public void setProductId(Long productId) { this.productId = productId; }
-        public Integer getQuantity() { return quantity; }
-        public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public List<OrderItemReq> getItems() {
+        return items;
+    }
+
+    public void setItems(List<OrderItemReq> items) {
+        this.items = items;
     }
 }
