@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class WalletService {
@@ -32,5 +33,20 @@ public class WalletService {
             log.setAmount(profitAmount);
             walletLogRepository.save(log);
         }
+    }
+
+    public WalletEntity getWalletByUserId(Long userId) {
+        return walletRepository.findById(userId)
+                .orElseGet(() -> {
+                    // ถ้ายังไม่มีกระเป๋า (กรณีสมัครใหม่) ให้สร้างก้อนใหม่ยอด 0 ให้เลย
+                    WalletEntity newWallet = new WalletEntity();
+                    newWallet.setUserId(userId);
+                    newWallet.setBalance(BigDecimal.ZERO);
+                    return walletRepository.save(newWallet);
+                });
+    }
+
+    public List<WalletLogEntity> getWalletLogs(Long userId) {
+        return walletLogRepository.findByUserId(userId);
     }
 }

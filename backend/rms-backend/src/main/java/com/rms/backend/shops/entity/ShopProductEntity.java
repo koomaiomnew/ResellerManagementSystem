@@ -19,6 +19,7 @@ public class ShopProductEntity {
     @Column(name = "selling_price", nullable = false)
     private BigDecimal sellingPrice;
 
+
     public Long getId() {
         return id;
     }

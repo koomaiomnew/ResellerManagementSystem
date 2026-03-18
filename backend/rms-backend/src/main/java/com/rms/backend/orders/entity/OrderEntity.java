@@ -1,12 +1,15 @@
 package com.rms.backend.orders.entity;
 
+import lombok.Data;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@Data
 @Entity
 @Table(name = "orders")
 public class OrderEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -17,17 +20,25 @@ public class OrderEntity {
     @Column(name = "shop_id")
     private Long shopId;
 
+    @Column(name = "customer_name", nullable = false)
+    private String customerName;
+
+    @Column(nullable = false)
+    private String address;
+
+    @Column(nullable = false)
+    private String phone;
+
     @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
 
     @Column(name = "reseller_profit", nullable = false)
     private BigDecimal resellerProfit;
 
-    @Column(name = "status")
     private String status = "ชำระเงินแล้ว";
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     public Long getId() {
         return id;
@@ -51,6 +62,30 @@ public class OrderEntity {
 
     public void setShopId(Long shopId) {
         this.shopId = shopId;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public BigDecimal getTotalAmount() {

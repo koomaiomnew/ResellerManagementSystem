@@ -45,12 +45,4 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<UserReq> updateUserStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        String newStatus = body.get("status");
-        UserReq existingUser = userService.getUserById(id);
-        existingUser.setStatus(newStatus);
-
-        return ResponseEntity.ok(userService.updateUser(id, existingUser));
-    }
 }

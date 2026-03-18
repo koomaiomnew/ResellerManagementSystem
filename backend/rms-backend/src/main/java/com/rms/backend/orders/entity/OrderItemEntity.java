@@ -1,11 +1,14 @@
 package com.rms.backend.orders.entity;
 
+import lombok.Data;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
+@Data
 @Entity
 @Table(name = "order_items")
 public class OrderItemEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

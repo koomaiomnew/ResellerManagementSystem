@@ -1,6 +1,6 @@
 package com.rms.backend.orders.service;
 
-import com.rms.backend.orders.dto.OrderReq;
+import com.rms.backend.orders.dto.*;
 import com.rms.backend.orders.entity.OrderEntity;
 import com.rms.backend.orders.entity.OrderItemEntity;
 import com.rms.backend.orders.repository.OrderItemRepository;
@@ -12,114 +12,137 @@ import com.rms.backend.shops.entity.ShopProductEntity;
 import com.rms.backend.shops.repository.ShopProductRepository;
 import com.rms.backend.shops.repository.ShopRepository;
 import com.rms.backend.wallet.service.WalletService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
 
-    @Autowired
-    private OrderRepository orderRepository;
+    @Autowired private WalletService walletService;
+    @Autowired private OrderRepository orderRepository;
+    @Autowired private OrderItemRepository orderItemRepository;
+    @Autowired private ShopRepository shopRepository;
+    @Autowired private ShopProductRepository shopProductRepository;
+    @Autowired private ProductRepository productRepository;
 
-    @Autowired
-    private OrderItemRepository orderItemRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private ShopRepository shopRepository;
-
-    @Autowired
-    private ShopProductRepository shopProductRepository;
-
-    @Autowired
-    private WalletService walletService; // นำเข้า Service ของกระเป๋าเงิน
-
-    // 🔥 @Transactional สำคัญมาก! ถ้า Error กลางคัน ระบบจะ Rollback คืนค่าให้หมด (เช่น คืนสต็อก)
     @Transactional
-    public OrderEntity placeOrder(OrderReq req) {
-        // 1. ตรวจสอบว่ามีร้านค้านี้ในระบบหรือไม่
+    public OrderRes checkout(OrderReq req) {
         ShopEntity shop = shopRepository.findById(req.getShopId())
-                .orElseThrow(() -> new RuntimeException("ไม่พบร้านค้านี้ในระบบ"));
+                .orElseThrow(() -> new RuntimeException("ไม่พบร้านค้านี้"));
 
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        BigDecimal totalResellerProfit = BigDecimal.ZERO;
+        String dateStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        int randomNum = (int) (Math.random() * 9000) + 1000;
+        String orderNumber = "ORD-" + dateStr + "-" + randomNum;
 
-        // 2. สร้างออเดอร์เปล่าๆ ไว้ก่อน (เพื่อเอา ID ไปผูกกับ Items)
         OrderEntity order = new OrderEntity();
-        order.setOrderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        order.setOrderNumber(orderNumber);
         order.setShopId(shop.getId());
-        order.setStatus("ชำระเงินแล้ว"); // จำลองว่าลูกค้าจ่ายเงินสำเร็จตามโจทย์
-
-        // เซ็ตยอดเงินเป็น 0 ไว้ก่อน เดี๋ยวมาอัปเดตหลังจากรวมยอดเสร็จ
+        order.setCustomerName(req.getCustomerName());
+        order.setAddress(req.getAddress());
+        order.setPhone(req.getPhone());
         order.setTotalAmount(BigDecimal.ZERO);
         order.setResellerProfit(BigDecimal.ZERO);
+        order.setStatus("ชำระเงินแล้ว");
+
         order = orderRepository.save(order);
 
-        // 3. วนลูปจัดการสินค้าในตะกร้าทีละชิ้น
-        for (OrderReq.OrderItemReq itemReq : req.getItems()) {
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal totalProfit = BigDecimal.ZERO;
+        List<OrderItemEntity> orderItems = new ArrayList<>();
 
-            // 3.1 ดึงข้อมูลสินค้าจากระบบกลาง
-            ProductEntity product = productRepository.findById(itemReq.getProductId())
-                    .orElseThrow(() -> new RuntimeException("ไม่พบสินค้าส่วนกลาง ID: " + itemReq.getProductId()));
+        for (OrderItemReq itemReq : req.getItems()) {
+            ShopProductEntity shopProduct = shopProductRepository.findById(itemReq.getShopProductId())
+                    .orElseThrow(() -> new RuntimeException("ไม่พบสินค้าในร้านรหัส: " + itemReq.getShopProductId()));
 
-            // 3.2 ดึงราคาสินค้าที่ตัวแทน(ร้านนี้)ตั้งไว้
+            ProductEntity product = productRepository.findById(shopProduct.getProductId())
+                    .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลสินค้าส่วนกลาง"));
 
-            ShopProductEntity shopProduct = shopProductRepository.findByShopIdAndProductId(shop.getId(), product.getId())
-                    .orElseThrow(() -> new RuntimeException("ร้านค้านี้ไม่ได้นำสินค้า ID: " + product.getId() + " มาขาย"));
-
-            // 3.3 ตรวจสอบสต็อก
             if (product.getStock() < itemReq.getQuantity()) {
-                throw new RuntimeException("สินค้า '" + product.getName() + "' มีสต็อกไม่เพียงพอ (เหลือ " + product.getStock() + " ชิ้น)");
+                throw new RuntimeException("ขออภัย สินค้า [" + product.getName() + "] สต็อกไม่เพียงพอ (เหลือ " + product.getStock() + " ชิ้น)");
             }
 
-            // 3.4 หักสต็อกสินค้า และบันทึก
             product.setStock(product.getStock() - itemReq.getQuantity());
             productRepository.save(product);
 
-            // 3.5 คำนวณยอดเงินและกำไรของสินค้ารายการนี้
-            BigDecimal itemCost = product.getCostPrice();          // ราคาทุน
-            BigDecimal itemSellPrice = shopProduct.getSellingPrice(); // ราคาขายที่ตัวแทนตั้ง
-            Integer qty = itemReq.getQuantity();
+            BigDecimal costPrice = product.getMinPrice();
+            BigDecimal sellingPrice = shopProduct.getSellingPrice();
+            int qty = itemReq.getQuantity();
 
-            // ยอดรวม = ราคาขาย * จำนวน
-            BigDecimal subTotal = itemSellPrice.multiply(BigDecimal.valueOf(qty));
+            BigDecimal itemTotalAmount = sellingPrice.multiply(BigDecimal.valueOf(qty));
+            BigDecimal itemProfit = (sellingPrice.subtract(costPrice)).multiply(BigDecimal.valueOf(qty));
 
-            // กำไรต่อชิ้น = ราคาขาย - ราคาทุน
-            BigDecimal profitPerItem = itemSellPrice.subtract(itemCost);
+            totalAmount = totalAmount.add(itemTotalAmount);
+            totalProfit = totalProfit.add(itemProfit);
 
-            // กำไรรวมของรายการนี้ = กำไรต่อชิ้น * จำนวน
-            BigDecimal subTotalProfit = profitPerItem.multiply(BigDecimal.valueOf(qty));
-
-            // บวกสะสมเข้ายอดรวมของ Order
-            totalAmount = totalAmount.add(subTotal);
-            totalResellerProfit = totalResellerProfit.add(subTotalProfit);
-
-            // 3.6 บันทึกรายการสินค้าในออเดอร์ (Order Item)
             OrderItemEntity orderItem = new OrderItemEntity();
             orderItem.setOrderId(order.getId());
             orderItem.setProductId(product.getId());
-            orderItem.setCostPrice(itemCost);
-            orderItem.setSellingPrice(itemSellPrice);
+            orderItem.setCostPrice(costPrice);
+            orderItem.setSellingPrice(sellingPrice);
             orderItem.setQuantity(qty);
-            orderItemRepository.save(orderItem);
+
+            orderItems.add(orderItem);
         }
 
-        // 4. อัปเดตยอดเงินรวม และ กำไรรวม กลับเข้าไปใน Order แล้วบันทึกอีกครั้ง
+        orderItemRepository.saveAll(orderItems);
+
         order.setTotalAmount(totalAmount);
-        order.setResellerProfit(totalResellerProfit);
+        order.setResellerProfit(totalProfit);
         orderRepository.save(order);
 
-        // 5. 🔥 อัปเดตยอดเงินเข้า Wallet ของตัวแทนผ่าน WalletService
-        // shop.getUserId() คือรหัสของตัวแทนที่เป็นเจ้าของร้านนี้
-        walletService.addProfitToReseller(shop.getUserId(), order.getId(), totalResellerProfit);
+        walletService.addProfitToReseller(shop.getUserId(), order.getId(), totalProfit);
 
-        return order;
+        return mapToOrderRes(order);
+    }
+
+    public List<OrderRes> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(this::mapToOrderRes)
+                .collect(Collectors.toList());
+    }
+
+    public OrderRes getOrderByNumber(String orderNumber) {
+        OrderEntity order = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new RuntimeException("ไม่พบออเดอร์หมายเลขนี้"));
+        return mapToOrderRes(order);
+    }
+
+    // ฟังก์ชันแปลง Entity เป็น Res (ประกอบร่าง)
+    private OrderRes mapToOrderRes(OrderEntity order) {
+        OrderRes res = new OrderRes();
+        res.setId(order.getId());
+        res.setOrderNumber(order.getOrderNumber());
+        res.setCustomerName(order.getCustomerName());
+        res.setAddress(order.getAddress());
+        res.setPhone(order.getPhone());
+        res.setTotalAmount(order.getTotalAmount());
+        res.setStatus(order.getStatus());
+        res.setCreatedAt(order.getCreatedAt());
+
+        List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(order.getId());
+        List<OrderItemRes> itemResList = new ArrayList<>();
+
+        for (OrderItemEntity item : orderItems) {
+            OrderItemRes itemRes = new OrderItemRes();
+            itemRes.setProductId(item.getProductId());
+            itemRes.setQuantity(item.getQuantity());
+            itemRes.setPrice(item.getSellingPrice());
+
+            ProductEntity product = productRepository.findById(item.getProductId()).orElse(null);
+            itemRes.setProductName(product != null ? product.getName() : "สินค้าไม่ทราบชื่อ");
+
+            itemResList.add(itemRes);
+        }
+
+        res.setItems(itemResList);
+        return res;
     }
 }
