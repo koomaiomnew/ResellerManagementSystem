@@ -10,7 +10,9 @@ import com.rms.backend.shops.repository.ShopRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ShopService {
@@ -24,6 +26,10 @@ public class ShopService {
     @Autowired
     private ProductRepository productRepository;
 
+
+    public List<ShopEntity> getAllShop(){
+        return shopRepository.findAll();
+    }
 
     public ShopEntity createShop(ShopEntity shopEntity) {
         return shopRepository.save(shopEntity);
@@ -46,10 +52,38 @@ public class ShopService {
         return shopProductRepository.save(shopProduct);
     }
 
-    public List<ShopProductEntity> getProductsByShopSlug(String shopSlug) {
+    public List<ShopProductReq> getProductsByShopSlug(String shopSlug) {
+
+        // ค้นหาร้านค้า
         ShopEntity shop = shopRepository.findByShopSlug(shopSlug)
                 .orElseThrow(() -> new RuntimeException("ไม่พบร้านค้านี้"));
+        // ค้นหารายการสินค้าในร้าน
+        List<ShopProductEntity> shopProducts = shopProductRepository.findByShopId(shop.getId());
 
-        return shopProductRepository.findByShopId(shop.getId());
+        List<ShopProductReq> resultList = new ArrayList<>();
+
+        for (ShopProductEntity sp : shopProducts) {
+            ShopProductReq dto = new ShopProductReq();
+            dto.setProductId(sp.getProductId());
+            dto.setSellingPrice(sp.getSellingPrice());
+
+            // วิ่งไปค้นหาข้อมูลสินค้าจากโกดังกลาง (เพื่อเอารูปกับชื่อ)
+            Optional<ProductEntity> productOpt = productRepository.findById(sp.getProductId());
+
+            if (productOpt.isPresent()) {
+                ProductEntity product = productOpt.get();
+                dto.setImageUrl(product.getImageUrl());
+                dto.setName(product.getName());
+            }
+            resultList.add(dto);
+        }
+
+        return resultList;
+    }
+
+    public void deleteProductFromShop(Long productId) {
+        shopProductRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("ไม่พบสินค้านี้ในร้าน"));
+        shopProductRepository.deleteById(productId);
     }
 }
