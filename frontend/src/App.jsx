@@ -5,7 +5,7 @@ import { initMockDB } from './utils/mockData';
 import Toast from './components/Toast';
 
 // Auth Pages
-import LandingPage from './pages/LandingPage'; // 🌟 เพิ่มบรรทัดนี้เพื่อนำเข้า LandingPage
+// import LandingPage from './pages/LandingPage'; // 🌟 เพิ่มบรรทัดนี้เพื่อนำเข้า LandingPage
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -47,7 +47,7 @@ function App() {
         <Routes>
           {/* Public / Auth */}
           {/* 🌟 เปลี่ยนจาก Navigate to="/login" เป็นหน้า LandingPage */}
-          <Route path="/" element={<LandingPage />} /> 
+          <Route path="/" element={<Login />} /> 
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
