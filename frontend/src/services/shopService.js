@@ -1,63 +1,46 @@
 import api from './api';
 
 export const shopService = {
-  // 1. สร้างร้านค้าใหม่
-  createShop: async (shopData) => {
+
+  getMyShop: async (userId) => {
     try {
-      const response = await api.post('/shops', shopData);
+      console.log("🔥 send userId:", userId);
+
+      if (!userId) throw new Error("userId is required");
+
+      const response = await api.get(`/shops/me/${userId}`);
       return response.data;
+
     } catch (error) {
-      console.error('CREATE SHOP ERROR:', error.response?.data);
-      throw new Error(error.response?.data?.message || 'สร้างร้านค้าไม่สำเร็จ');
+      console.error("❌ getMyShop error:", error);
+      throw new Error(error.response?.data || 'ไม่พบร้านค้า');
     }
   },
 
-  // 2. ดึงสินค้าในร้าน
   getShopProductsBySlug: async (shopSlug) => {
     try {
       const response = await api.get(`/shops/${shopSlug}`);
       return response.data;
     } catch (error) {
-      console.error('GET SHOP PRODUCTS ERROR:', error.response?.data);
-      throw new Error(error.response?.data?.message || 'ไม่พบข้อมูลร้านค้านี้');
+      throw new Error(error.response?.data || 'ไม่พบข้อมูลร้านค้า');
     }
   },
 
-  // 3. เพิ่มสินค้าเข้าร้าน
   addProductToShop: async (shopId, productData) => {
     try {
-      // 🔥 validate ก่อนยิง API
-      if (!shopId) {
-        throw new Error('shopId is required');
-      }
-
-      if (!productData?.productId) {
-        throw new Error('productId is required');
-      }
-
-      if (productData?.sellingPrice == null) {
-        throw new Error('sellingPrice is required');
-      }
-
-      // 🔥 บังคับ format ให้ตรง backend 100%
-      const payload = {
-        productId: Number(productData.productId),
-        sellingPrice: Number(productData.sellingPrice),
-      };
-
-      console.log('ADD PRODUCT PAYLOAD:', payload);
-
-      const response = await api.post(
-        `/shops/${shopId}/products`,
-        payload
-      );
-
+      const response = await api.post(`/shops/${shopId}/products`, productData);
       return response.data;
     } catch (error) {
-      console.error('ADD PRODUCT ERROR:', error.response?.data || error.message);
-      throw new Error(
-        error.response?.data?.message || error.message || 'เพิ่มสินค้าเข้าร้านไม่สำเร็จ'
-      );
+      throw new Error(error.response?.data || 'เพิ่มสินค้าไม่สำเร็จ');
+    }
+  },
+
+  deleteProductFromShop: async (id) => {
+    try {
+      const response = await api.delete(`/shops/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data || 'ลบสินค้าไม่สำเร็จ');
     }
   }
 };
