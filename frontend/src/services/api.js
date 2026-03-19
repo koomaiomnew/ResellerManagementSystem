@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // เปลี่ยนพอร์ตเป็น 8080 ซึ่งเป็นพอร์ตเริ่มต้นของ Spring Boot
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api', 
+ 
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://bootcamp04.duckdns.org/api', 
   headers: {
     'Content-Type': 'application/json',
   },
