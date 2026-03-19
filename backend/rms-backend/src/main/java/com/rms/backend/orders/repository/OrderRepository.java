@@ -1,10 +1,12 @@
 package com.rms.backend.orders.repository;
 
+import com.rms.backend.orders.dto.OrderRes;
 import com.rms.backend.orders.entity.OrderEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
@@ -14,4 +16,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 
     @Query("SELECT SUM(o.resellerProfit) FROM OrderEntity o")
     BigDecimal sumTotalProfit();
+
+    List<OrderEntity> findByShopId(Long shopId);
+    List<OrderEntity> findByStatusNotInOrderByCreatedAtDesc(List<String> statuses);
 }

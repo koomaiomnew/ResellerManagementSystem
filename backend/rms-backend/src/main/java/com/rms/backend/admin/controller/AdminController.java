@@ -48,7 +48,7 @@ public class AdminController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @GetMapping("/reseller")
+    @GetMapping("/resellers")
     public List<AdminResellerReq> getAllResellers() {
         return adminService.getAllUser();
     }

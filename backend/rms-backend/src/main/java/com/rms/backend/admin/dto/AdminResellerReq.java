@@ -1,11 +1,20 @@
 package com.rms.backend.admin.dto;
 
 public class AdminResellerReq {
+    private Long userId;
     private String name;
     private String shopName;
     private String email;
     private String role;
     private String status;
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
 
     public String getName() {
         return name;
