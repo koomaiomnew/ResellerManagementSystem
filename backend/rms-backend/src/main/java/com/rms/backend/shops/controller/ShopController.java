@@ -50,11 +50,15 @@ public class ShopController {
         }
     }
 
-    // 🔥 แก้ delete ให้ถูก
-    @DeleteMapping("/products/{id}")
-    public ResponseEntity<?> deleteProductFromShop(@PathVariable Long id) {
-        shopService.deleteProductFromShop(id);
-        return ResponseEntity.ok().build();
+    // 🔥 แก้ไข Path ให้รับ shopId และ productId
+    @DeleteMapping("/{shopId}/products/{productId}")
+    public ResponseEntity<?> deleteProductFromShop(@PathVariable Long shopId, @PathVariable Long productId) {
+        try {
+            shopService.deleteProductFromShop(shopId, productId);
+            return ResponseEntity.ok("ลบสินค้าออกจากร้านเรียบร้อยแล้ว");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/me/{userId}")
