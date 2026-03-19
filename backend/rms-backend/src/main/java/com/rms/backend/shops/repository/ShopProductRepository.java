@@ -6,5 +6,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ShopProductRepository extends JpaRepository<ShopProductEntity, Long> {
+
     List<ShopProductEntity> findByShopId(Long shopId);
+
+    boolean existsByShopIdAndProductId(Long shopId, Long productId);
 }
