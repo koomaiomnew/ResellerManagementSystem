@@ -1,4 +1,3 @@
-import { getDB, setDB } from '../utils/mockData';
 import api from './api'; // 🌟 อย่าลืม import api ด้วยนะครับ
 
 export const orderService = {
@@ -12,5 +11,10 @@ export const orderService = {
       throw new Error(error.response?.data?.message || 'ไม่สามารถดึงข้อมูลออเดอร์ได้');
     }
   },
+  getActiveOrders: async () => {
+    // เรียก API เส้นใหม่ที่เราเพิ่งสร้าง
+    const response = await api.get('/orders/active');
+    return response.data;
+  }
 
 };

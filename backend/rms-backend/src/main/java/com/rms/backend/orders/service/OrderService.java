@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -165,4 +166,14 @@ public class OrderService {
                 .map(this::mapToOrderRes) // ฟังก์ชันแปลง Entity เป็น DTO
                 .collect(Collectors.toList());
     }
+
+    public List<OrderRes> getAllActiveOrders() {
+        List<String> completedStatuses = Arrays.asList("COMPLETED", "FAILED", "CANCELLED", "FALSE", "completed", "false");
+        // ดึงเฉพาะที่ยังต้องดำเนินการ (เอามาทั้งหมดเลย แอดมินจะได้จัดส่งได้)
+        List<OrderEntity> activeOrders = orderRepository.findByStatusNotInOrderByCreatedAtDesc(completedStatuses);
+
+        return activeOrders.stream().map(this::mapToOrderRes).collect(Collectors.toList());
+    }
+
+
 }

@@ -74,6 +74,7 @@ public class AdminService {
         // 2. แปลง (Map) UserEntity แต่ละตัวให้กลายเป็น AdminResellerReq DTO
         return users.stream().map(user -> {
             AdminResellerReq dto = new AdminResellerReq();
+            dto.setUserId(user.getId());
             dto.setName(user.getName());
             dto.setEmail(user.getEmail());
             dto.setRole(user.getRole());

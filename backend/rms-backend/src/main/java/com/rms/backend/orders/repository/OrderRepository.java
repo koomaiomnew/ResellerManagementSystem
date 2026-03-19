@@ -1,5 +1,6 @@
 package com.rms.backend.orders.repository;
 
+import com.rms.backend.orders.dto.OrderRes;
 import com.rms.backend.orders.entity.OrderEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,4 +18,5 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     BigDecimal sumTotalProfit();
 
     List<OrderEntity> findByShopId(Long shopId);
+    List<OrderEntity> findByStatusNotInOrderByCreatedAtDesc(List<String> statuses);
 }

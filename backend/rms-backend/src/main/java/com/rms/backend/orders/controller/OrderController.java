@@ -42,4 +42,8 @@ public class OrderController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @GetMapping("/active")
+    public ResponseEntity<List<OrderRes>> getActiveOrders() {
+        return ResponseEntity.ok(orderService.getAllActiveOrders());
+    }
 }
