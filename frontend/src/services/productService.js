@@ -1,54 +1,51 @@
-import { getDB, setDB } from '../utils/mockData';
+import api from './api'; // 🌟 นำเข้า Axios instance ที่เราตั้งค่าไว้
 
 export const productService = {
+  // 1. ดึงสินค้าทั้งหมด (GET /api/products)
   getAllProducts: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(getDB('mock_products'));
-      }, 300);
-    });
+    try {
+      const response = await api.get('/products');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'ดึงข้อมูลสินค้าไม่สำเร็จ');
+    }
   },
 
+  // 2. เพิ่มสินค้าใหม่ (POST /api/products)
   createProduct: async (productData) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const products = getDB('mock_products');
-        const newProduct = {
-          id: Date.now(),
-          ...productData,
-          costPrice: Number(productData.costPrice),
-          minPrice: Number(productData.minPrice),
-          stock: Number(productData.stock)
-        };
-        products.push(newProduct);
-        setDB('mock_products', products);
-        resolve(newProduct);
-      }, 300);
-    });
+    try {
+      // แปลงพวกราคาและสต๊อกให้เป็นตัวเลข (Number) เพื่อความชัวร์ก่อนส่งไป Java
+      const payload = {
+        ...productData,
+        costPrice: Number(productData.costPrice),
+        minPrice: Number(productData.minPrice),
+        stock: Number(productData.stock)
+      };
+      
+      const response = await api.post('/products', payload);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'เพิ่มสินค้าไม่สำเร็จ');
+    }
   },
 
+  // 3. แก้ไขข้อมูลสินค้า (PUT /api/products/{id})
   updateProduct: async (id, data) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let products = getDB('mock_products');
-        const index = products.findIndex(p => p.id === id);
-        if (index > -1) {
-          products[index] = { ...products[index], ...data };
-          setDB('mock_products', products);
-          resolve(products[index]);
-        }
-      }, 300);
-    });
+    try {
+      const response = await api.put(`/products/${id}`, data);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'แก้ไขสินค้าไม่สำเร็จ');
+    }
   },
 
+  // 4. ลบสินค้า (DELETE /api/products/{id})
   deleteProduct: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let products = getDB('mock_products');
-        products = products.filter(p => p.id !== id);
-        setDB('mock_products', products);
-        resolve(true);
-      }, 300);
-    });
+    try {
+      await api.delete(`/products/${id}`);
+      return true;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'ลบสินค้าไม่สำเร็จ');
+    }
   }
 };

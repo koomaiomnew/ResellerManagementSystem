@@ -1,54 +1,49 @@
-import { getDB, setDB } from '../utils/mockData';
+import api from './api';
 
 export const resellerService = {
+
   getAllResellers: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const users = getDB('mock_users');
-        resolve(users.filter(u => u.role === 'RESELLER'));
-      }, 300);
-    });
+    const response = await api.get('/users');
+    return response.data.filter(user => user.role === 'RESELLER');
   },
 
   approveReseller: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let users = getDB('mock_users');
-        const index = users.findIndex(u => u.id === id);
-        if (index > -1) {
-          users[index].status = 'APPROVED';
-          setDB('mock_users', users);
-          resolve(users[index]);
-        }
-      }, 300);
-    });
+    try {
+      // 1. ดึง user เดิมมาก่อน
+      const userRes = await api.get(`/users/${id}`);
+      const user = userRes.data;
+
+      // 2. แก้ status
+      const updatedUser = {
+        ...user,
+        status: 'APPROVED'
+      };
+
+      // 3. ส่ง PUT
+      const response = await api.put(`/users/${id}`, updatedUser);
+      return response.data;
+
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'อนุมัติบัญชีไม่สำเร็จ');
+    }
   },
 
   rejectReseller: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let users = getDB('mock_users');
-        const index = users.findIndex(u => u.id === id);
-        if (index > -1) {
-          users[index].status = 'REJECTED';
-          setDB('mock_users', users);
-          resolve(users[index]);
-        }
-      }, 300);
-    });
-  },
+    try {
+      const userRes = await api.get(`/users/${id}`);
+      const user = userRes.data;
 
-  getShopDetails: async (shopName) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = getDB('mock_users');
-        const shop = users.find(u => u.shopName === shopName && u.role === 'RESELLER' && u.status === 'APPROVED');
-        if (shop) {
-          resolve(shop);
-        } else {
-          reject(new Error('Shop not found'));
-        }
-      }, 300);
-    });
+      const updatedUser = {
+        ...user,
+        status: 'REJECTED'
+      };
+
+      const response = await api.put(`/users/${id}`, updatedUser);
+      return response.data;
+
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'ปฏิเสธบัญชีไม่สำเร็จ');
+    }
   }
+
 };

@@ -1,17 +1,14 @@
 import axios from 'axios';
 
-// Since we use mock services, we won't strictly use axios for the data layer,
-// but the requirement explicitly mentions Axios. We can simulate interceptors 
-// or keep a configured instance here for future real-API integration.
-
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Dummy URL
+  // เปลี่ยนพอร์ตเป็น 8080 ซึ่งเป็นพอร์ตเริ่มต้นของ Spring Boot
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api', 
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Mock interceptor to inject auth token
+// Mock interceptor to inject auth token (ใช้ของเดิมได้เลย)
 api.interceptors.request.use((config) => {
   const user = localStorage.getItem('user');
   if (user) {

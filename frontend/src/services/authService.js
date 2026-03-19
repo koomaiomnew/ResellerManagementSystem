@@ -1,50 +1,26 @@
-import { getDB, setDB } from '../utils/mockData';
+import api from './api'; // นำเข้าตัวแปร api ที่เราตั้งค่าไว้
 
 export const authService = {
   login: async (email, password) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = getDB('mock_users');
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (!user) {
-          return reject(new Error('Invalid credentials'));
-        }
-        
-        if (user.role === 'RESELLER' && user.status !== 'APPROVED') {
-          return reject(new Error('Account pending approval or rejected'));
-        }
-        
-        // Exclude password from the returned object
-        const { password: _, ...userInfo } = user;
-        resolve(userInfo);
-      }, 500);
-    });
+    try {
+      // ส่ง POST request ไปที่ http://localhost:8080/api/auth/login
+      const response = await api.post('/auth/login', { email, password });
+      
+      // ส่งข้อมูล User/Token กลับไปให้ฝั่ง UI
+      return response.data; 
+    } catch (error) {
+      // ถ้า Backend ส่ง HTTP Status Error กลับมา (เช่น 401 UNAUTHORIZED)
+      throw new Error(error.response?.data || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+    }
   },
 
   registerReseller: async (data) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = getDB('mock_users');
-        if (users.find(u => u.email === data.email)) {
-          return reject(new Error('Email already exists'));
-        }
-        if (users.find(u => u.shopName === data.shopName)) {
-          return reject(new Error('Shop name already taken'));
-        }
-        
-        const newUser = {
-          id: Date.now(),
-          ...data,
-          role: 'RESELLER',
-          status: 'PENDING_APPROVAL',
-          wallet: 0
-        };
-        
-        users.push(newUser);
-        setDB('mock_users', users);
-        resolve({ message: 'Registration successful! Waiting for admin approval.' });
-      }, 500);
-    });
+    try {
+      // ส่ง POST request ไปที่ http://localhost:8080/api/auth/register
+      const response = await api.post('/auth/register', data);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data || 'สมัครสมาชิกไม่สำเร็จ');
+    }
   }
 };

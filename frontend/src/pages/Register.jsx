@@ -13,8 +13,19 @@ const Register = () => {
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
 
+    // 🌟 สร้าง payload เพื่อแปลงชื่อตัวแปรให้ตรงกับ Java
+    const payload = {
+      name: data.fullname,    // จับคู่ fullname ให้เป็น name
+      email: data.email,
+      password: data.password,
+      phone: data.phone,
+      shopName: data.shopName,
+      role: "RESELLER"        // ใส่ role เข้าไปด้วย
+    };
+
     try {
-      const res = await authService.registerReseller(data);
+      // 🌟 เปลี่ยนจาก data เป็น payload
+      const res = await authService.registerReseller(payload);
       showToast(res.message);
       navigate('/login');
     } catch (err) {
