@@ -31,17 +31,26 @@ const ProductTable = ({ products, onEdit, onDelete, role }) => {
                 {role === 'ADMIN' && <td className="px-6 py-4">{formatCurrency(product.costPrice)}</td>}
                 <td className="px-6 py-4">{formatCurrency(role === 'ADMIN' ? product.minPrice : (product.sellingPrice || product.minPrice))}</td>
                 <td className="px-6 py-4 flex justify-end gap-3">
-                  <button onClick={() => onEdit(product)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
-                    Edit
-                  </button>
-                  {role === 'ADMIN' && (
+                  
+                  {/* ปุ่ม Edit: เช็คว่ามีฟังก์ชัน onEdit ส่งมาไหม */}
+                  {onEdit && (
+                    <button onClick={() => onEdit(product)} className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                      Edit
+                    </button>
+                  )}
+                  
+                  {/* 🌟 ปุ่ม Delete: แก้ไขเอา role === 'ADMIN' ออกแล้ว */}
+                  {onDelete && (
                     <button onClick={() => onDelete(product.id)} className="text-red-600 hover:text-red-800 font-medium transition-colors">
                       Delete
                     </button>
                   )}
+                  
                 </td>
               </tr>
             ))}
+            
+            {/* ส่วนแสดงผลกรณีที่ข้อมูลว่างเปล่า */}
             {products.length === 0 && (
               <tr>
                 <td colSpan={role === 'ADMIN' ? 6 : 5} className="px-6 py-12 text-center text-gray-500">

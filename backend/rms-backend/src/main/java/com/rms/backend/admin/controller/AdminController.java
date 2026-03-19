@@ -1,12 +1,14 @@
 package com.rms.backend.admin.controller;
 
+import com.rms.backend.admin.dto.AdminResellerReq;
 import com.rms.backend.admin.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
-@CrossOrigin(origins = "http://localhost:5173")
+
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -45,5 +47,9 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    @GetMapping("/reseller")
+    public List<AdminResellerReq> getAllResellers() {
+        return adminService.getAllUser();
     }
 }

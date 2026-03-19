@@ -60,6 +60,19 @@ public class ShopService {
         return shopProductRepository.save(sp);
     }
 
+    public ShopProductEntity updateShopProduct(Long shopId, ShopProductReq req) {
+        // 1. 🌟 เปลี่ยนมาใช้เมธอดที่เราเพิ่งสร้าง ค้นหาด้วย shopId และ productId
+        ShopProductEntity entity = shopProductRepository.findByShopIdAndProductId(shopId, req.getProductId())
+                .orElseThrow(() -> new RuntimeException("ไม่พบสินค้านี้ในร้านของคุณ"));
+
+        // 2. 🌟 อัปเดตแค่ราคาขายอย่างเดียวก็พอ (ไม่ต้องเซ็ต ShopId หรือ ProductId ทับแล้ว เพราะมันถูกอยู่แล้ว)
+        entity.setSellingPrice(req.getSellingPrice());
+
+        // 3. บันทึกลง Database
+        return shopProductRepository.save(entity);
+    }
+
+
     public List<ShopProductReq> getProductsByShopSlug(String shopSlug) {
         ShopEntity shop = shopRepository.findByShopSlug(shopSlug)
                 .orElseThrow(() -> new RuntimeException("ไม่พบร้าน"));
@@ -84,12 +97,14 @@ public class ShopService {
     }
 
     // 🔥 แก้ไขการลบให้ค้นหาจาก shopId และ productId
-    @Transactional
+    @Transactional // 🌟 ใส่ Transactional ไว้ด้วย ป้องกันข้อมูลพังตอนลบ
     public void deleteProductFromShop(Long shopId, Long productId) {
-        ShopProductEntity shopProduct = shopProductRepository.findByShopIdAndProductId(shopId, productId)
+        // 1. ค้นหาข้อมูลจาก Database (ใช้คำสั่งที่เราเพิ่งเพิ่มไปใน Repository รอบที่แล้ว)
+        ShopProductEntity entity = shopProductRepository.findByShopIdAndProductId(shopId, productId)
                 .orElseThrow(() -> new RuntimeException("ไม่พบสินค้านี้ในร้านของคุณ"));
 
-        shopProductRepository.delete(shopProduct);
+        // 2. สั่งลบข้อมูล
+        shopProductRepository.delete(entity);
     }
 
     public ShopEntity getShopByUserId(Long userId) {

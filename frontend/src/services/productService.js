@@ -5,7 +5,9 @@ export const productService = {
   getAllProducts: async () => {
     try {
       const response = await api.get('/products');
+      console.log("🔥 getAllProducts response:", response.data);
       return response.data;
+      
     } catch (error) {
       throw new Error(error.response?.data?.message || 'ดึงข้อมูลสินค้าไม่สำเร็จ');
     }

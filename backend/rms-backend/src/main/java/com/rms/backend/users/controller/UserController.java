@@ -18,10 +18,6 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<UserReq>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
-    }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserReq> getUserById(@PathVariable Long id) {

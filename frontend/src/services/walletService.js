@@ -1,24 +1,21 @@
-import { getDB, setDB } from '../utils/mockData';
+import api from "./api";
 
 export const walletService = {
-  getWalletDetails: async (resellerId) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const users = getDB('mock_users');
-        const reseller = users.find(u => u.id === resellerId);
-        
-        const orders = getDB('mock_orders').filter(o => o.resellerId === resellerId);
-        
-        resolve({
-          balance: reseller?.wallet || 0,
-          transactions: orders.map(o => ({
-            id: o.id,
-            orderNumber: o.orderNumber,
-            profit: o.profit,
-            date: o.createdAt
-          }))
-        });
-      }, 300);
-    });
+  getWalletBalance: async (userId) => {
+    try {
+      const response = await api.get(`/wallet/${userId}/balance`);
+      return response.data.balance;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'ไม่สามารถดึงยอดเงินได้');
+    }
+  },
+
+  getWalletLog: async (userId) => {
+    try {
+      const response = await api.get(`/wallet/${userId}/logs`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'ไม่สามารถดึงประวัติการเงินได้');
+    }
   }
 };
