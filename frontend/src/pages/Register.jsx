@@ -20,7 +20,7 @@ const Register = () => {
       password: data.password,
       phone: data.phone,
       shopName: data.shopName,
-      role: "RESELLER"        // ใส่ role เข้าไปด้วย
+      role: "reseller"        // ใส่ role เข้าไปด้วย
     };
 
     try {

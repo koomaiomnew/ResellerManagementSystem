@@ -58,7 +58,7 @@ const AdminResellers = () => {
             </thead>
             <tbody className="divide-y divide-gray-100 font-medium">
               {resellers.map(reseller => {
-                const currentStatus = reseller.status ? reseller.status.toUpperCase() : 'PENDING';
+                const currentStatus = reseller.status ? reseller.status : 'pending';
                 return (
                   <tr key={reseller.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 font-bold text-gray-900">{reseller.name}</td>
@@ -66,15 +66,15 @@ const AdminResellers = () => {
                     <td className="px-6 py-4 text-gray-500">{reseller.email}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold
-                        ${currentStatus === 'APPROVED' ? 'bg-green-100 text-green-800' : 
-                          currentStatus === 'REJECTED' ? 'bg-red-100 text-red-800' : 
+                        ${currentStatus === 'approved' ? 'bg-green-100 text-green-800' : 
+                          currentStatus === 'rejected' ? 'bg-red-100 text-red-800' : 
                           'bg-yellow-100 text-yellow-800'}
                       `}>
                         {currentStatus}
                       </span>
                     </td>
                     <td className="px-6 py-4 flex justify-end gap-3">
-                      {(currentStatus === 'PENDING') && (
+                      {(currentStatus === 'pending') && (
                         <>
                           <button onClick={() => handleApprove(reseller.id)} className="text-green-600 hover:text-green-800 font-bold">Approve</button>
                           <button onClick={() => handleReject(reseller.id)} className="text-red-600 hover:text-red-800 font-bold">Reject</button>

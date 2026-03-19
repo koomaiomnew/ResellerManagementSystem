@@ -4,7 +4,9 @@ export const resellerService = {
 
   getAllResellers: async () => {
     const response = await api.get('/users');
-    return response.data.filter(user => user.role === 'RESELLER');
+    return response.data
+      .filter(user => user.role === 'reseller')
+      .sort((a, b) => b.id - a.id); // 🌟 เพิ่มบรรทัดนี้เพื่อเรียง id จากมากไปน้อย
   },
 
   approveReseller: async (id) => {
@@ -16,7 +18,7 @@ export const resellerService = {
       // 2. แก้ status
       const updatedUser = {
         ...user,
-        status: 'APPROVED'
+        status: 'approved'
       };
 
       // 3. ส่ง PUT
@@ -35,7 +37,7 @@ export const resellerService = {
 
       const updatedUser = {
         ...user,
-        status: 'REJECTED'
+        status: 'rejected'
       };
 
       const response = await api.put(`/users/${id}`, updatedUser);

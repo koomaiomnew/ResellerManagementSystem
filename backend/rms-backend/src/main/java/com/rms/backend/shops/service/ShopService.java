@@ -9,6 +9,7 @@ import com.rms.backend.shops.repository.ShopProductRepository;
 import com.rms.backend.shops.repository.ShopRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,30 +31,23 @@ public class ShopService {
     }
 
     public ShopEntity createShop(ShopEntity shopEntity) {
-
-        // 🔥 กันสร้างซ้ำ
         if (shopRepository.findByUserId(shopEntity.getUserId()).isPresent()) {
             throw new RuntimeException("คุณมีร้านอยู่แล้ว");
         }
-
         return shopRepository.save(shopEntity);
     }
 
     public ShopProductEntity addProductToShop(Long shopId, ShopProductReq req) {
-
-        // 🔥 เช็ค shop มีจริง
         shopRepository.findById(shopId)
                 .orElseThrow(() -> new RuntimeException("ไม่พบร้านค้า"));
 
         ProductEntity product = productRepository.findById(req.getProductId())
                 .orElseThrow(() -> new RuntimeException("ไม่พบสินค้า"));
 
-        // 🔥 กันราคาต่ำ
         if (req.getSellingPrice().compareTo(product.getMinPrice()) < 0) {
             throw new RuntimeException("ราคาต่ำกว่าขั้นต่ำ");
         }
 
-        // 🔥 กันเพิ่มซ้ำ
         if (shopProductRepository.existsByShopIdAndProductId(shopId, req.getProductId())) {
             throw new RuntimeException("สินค้านี้มีอยู่ในร้านแล้ว");
         }
@@ -67,13 +61,10 @@ public class ShopService {
     }
 
     public List<ShopProductReq> getProductsByShopSlug(String shopSlug) {
-
         ShopEntity shop = shopRepository.findByShopSlug(shopSlug)
                 .orElseThrow(() -> new RuntimeException("ไม่พบร้าน"));
 
-        List<ShopProductEntity> shopProducts =
-                shopProductRepository.findByShopId(shop.getId());
-
+        List<ShopProductEntity> shopProducts = shopProductRepository.findByShopId(shop.getId());
         List<ShopProductReq> result = new ArrayList<>();
 
         for (ShopProductEntity sp : shopProducts) {
@@ -92,11 +83,15 @@ public class ShopService {
         return result;
     }
 
-    public void deleteProductFromShop(Long id) {
-        shopProductRepository.deleteById(id);
+    // 🔥 แก้ไขการลบให้ค้นหาจาก shopId และ productId
+    @Transactional
+    public void deleteProductFromShop(Long shopId, Long productId) {
+        ShopProductEntity shopProduct = shopProductRepository.findByShopIdAndProductId(shopId, productId)
+                .orElseThrow(() -> new RuntimeException("ไม่พบสินค้านี้ในร้านของคุณ"));
+
+        shopProductRepository.delete(shopProduct);
     }
 
-    // 🔥 FIX สำคัญ: ไม่ auto create แล้ว
     public ShopEntity getShopByUserId(Long userId) {
         return shopRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("ไม่พบร้านค้า กรุณาสร้างร้านก่อน"));
