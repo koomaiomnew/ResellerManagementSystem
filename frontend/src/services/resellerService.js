@@ -6,13 +6,13 @@ export const resellerService = {
     const response = await api.get('/admin/reseller');
     return response.data
       .filter(user => user.role === 'reseller')
-      .sort((a, b) => b.id - a.id); // 🌟 เพิ่มบรรทัดนี้เพื่อเรียง id จากมากไปน้อย
+      .sort((a, b) => a.id - b.id); // 🌟 เพิ่มบรรทัดนี้เพื่อเรียง id จากมากไปน้อย
   },
 
   approveReseller: async (id) => {
     try {
       // 1. ดึง user เดิมมาก่อน
-      const userRes = await api.get(`/users/${id}`);
+      const userRes = await api.get(`/admin/resellers/${id}/status`);
       const user = userRes.data;
 
       // 2. แก้ status

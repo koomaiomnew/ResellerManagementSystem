@@ -7,8 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
-@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -26,10 +26,14 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<OrderRes>> getAllOrders() {
-        return ResponseEntity.ok(orderService.getAllOrders());
+    public ResponseEntity<List<OrderRes>> getOrdersByShop(@RequestParam(required = false) Long shopId) {
+        if (shopId != null) {
+            // ค้นหาเฉพาะของร้านค้านั้นๆ
+            return ResponseEntity.ok(orderService.getOrdersByShopId(shopId));
+        }
+        // ถ้าไม่ใส่ shopId มา อาจจะให้ return ว่างๆ หรือใส่ Pagination (Pageable) แทนในอนาคต
+        return ResponseEntity.ok(Collections.emptyList());
     }
-
     @GetMapping("/track/{orderNumber}")
     public ResponseEntity<?> trackOrderStatus(@PathVariable String orderNumber) {
         try {

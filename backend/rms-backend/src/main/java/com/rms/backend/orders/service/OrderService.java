@@ -159,4 +159,10 @@ public class OrderService {
         res.setItems(itemResList);
         return res;
     }
+    public List<OrderRes> getOrdersByShopId(Long shopId) {
+        List<OrderEntity> orders = orderRepository.findByShopId(shopId);
+        return orders.stream()
+                .map(this::mapToOrderRes) // ฟังก์ชันแปลง Entity เป็น DTO
+                .collect(Collectors.toList());
+    }
 }

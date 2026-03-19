@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { walletService } from '../../services/walletService';
-import { orderService } from '../../services/orderService'; // ดึงจาก Mock ไปก่อน
-import { shopService } from '../../services/shopService'; // 🌟 นำเข้า shopService
+import { shopService } from '../../services/shopService';
+import { orderService } from '../../services/orderService'; 
 import { formatCurrency } from '../../utils/formatter';
 import Loading from '../../components/Loading';
 
 const ResellerDashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
-  const [shop, setShop] = useState(null); // เก็บข้อมูลร้าน
+  const [shop, setShop] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,31 +18,33 @@ const ResellerDashboard = () => {
       if (!user?.id) return;
 
       try {
-        // 🌟 ดึงข้อมูลพร้อมกัน 3 อย่าง: ร้านค้า (จริง), กระเป๋าเงิน (จริง), ออเดอร์ (Mock)
-        const [shopData, balance, orders] = await Promise.all([
-          shopService.getMyShop(user.id).catch(() => null), // ถ้ายังไม่มีร้านให้ข้ามไปก่อน
-          walletService.getWalletBalance(user.id).catch(() => 0), // ถ้าดึงเงินพัง ให้เป็น 0
-          orderService.getResellerOrders(user.id) // Mock ข้อมูลไปก่อน
+        setLoading(true);
+
+        const [shopData, balance] = await Promise.all([
+          shopService.getMyShop(user.id).catch(() => null),
+          walletService.getWalletBalance(user.id).catch(() => 0)
         ]);
 
         setShop(shopData);
 
-        const validOrders = Array.isArray(orders) 
-          ? orders.filter(o => o.status !== 'CANCELLED') 
-          : [];
+        let actualOrders = [];
+        if (shopData && shopData.id) {
+            actualOrders = await orderService.getOrdersByShop(shopData.id).catch(() => []);
+        }
 
-        // สมมติกำไรให้ก่อน (เพราะ mock order อาจจะไม่มีฟิลด์ profit)
-        const totalProfit = validOrders.reduce((sum, o) => sum + (o.profit || 100), 0); 
+        const sortedOrders = actualOrders.sort(
+          (a, b) => new Date(b.createdAt || b.created_at) - new Date(a.createdAt || a.created_at)
+        );
 
         setStats({
-          balance: balance, // 🌟 ใช้ balance จาก Backend จริง
-          totalProfit: totalProfit,
-          totalOrders: validOrders.length,
-          recentOrders: validOrders.slice(0, 5)
+          balance: balance,
+          totalOrders: actualOrders.length, 
+          recentActivity: sortedOrders.slice(0, 5) 
         });
+
       } catch (err) {
         console.error("Dashboard Fetch Error:", err);
-        setError("ไม่สามารถโหลดข้อมูล Dashboard ได้ในขณะนี้");
+        setError("ไม่สามารถโหลดข้อมูล Dashboard ได้");
       } finally {
         setLoading(false);
       }
@@ -64,9 +66,18 @@ const ResellerDashboard = () => {
   if (!stats) return null;
 
   const statCards = [
-    { label: 'Wallet Balance', value: formatCurrency(stats.balance), color: 'bg-green-500' },
-    { label: 'Total Profit', value: formatCurrency(stats.totalProfit), color: 'bg-blue-500' },
-    { label: 'Total Orders', value: stats.totalOrders, color: 'bg-purple-500' },
+    { 
+      label: 'ยอดเงินคงเหลือ', 
+      value: formatCurrency(stats.balance), 
+      color: 'text-blue-600',
+      subLabel: 'Wallet Balance' 
+    },
+    { 
+      label: 'จำนวนออเดอร์ทั้งหมด', 
+      value: stats.totalOrders, 
+      color: 'text-purple-600',
+      subLabel: 'Total Sales' 
+    },
   ];
 
   return (
@@ -74,43 +85,60 @@ const ResellerDashboard = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Reseller Dashboard</h2>
-          {/* 🌟 แสดงชื่อร้านถ้าดึงมาจาก Backend ได้ */}
-          {shop ? (
-            <p className="text-gray-500">ร้าน: {shop.shopName} (@{shop.shopSlug})</p>
-          ) : (
-            <p className="text-red-400 text-sm">ยังไม่มีข้อมูลร้านค้า</p>
+          {shop && (
+            <p className="text-gray-500 text-sm">ร้าน: {shop.shopName} (@{shop.shopSlug})</p>
           )}
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {statCards.map((stat, idx) => (
-          <div key={idx} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow">
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">{stat.label}</p>
-              <h3 className="text-2xl font-bold text-gray-900">{stat.value}</h3>
-            </div>
+          <div key={idx} className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 flex flex-col justify-center hover:shadow-md transition-shadow h-40">
+            <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">{stat.label}</p>
+            <h3 className={`text-4xl font-black ${stat.color}`}>{stat.value}</h3>
+            <p className="text-xs text-gray-400 mt-1">{stat.subLabel}</p>
           </div>
         ))}
       </div>
 
       <div className="bg-white rounded-xl shadow-md p-6 mt-8">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Orders Activity (Mock Data)</h3>
+        <h3 className="text-lg font-bold text-gray-800 mb-4">ออเดอร์ล่าสุด (Recent Orders)</h3>
         <div className="space-y-4">
-          {stats.recentOrders.length === 0 ? (
-            <p className="text-gray-500">No recent orders.</p>
+          {stats.recentActivity.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">ยังไม่มีรายการ</p>
           ) : (
-            stats.recentOrders.map((order, index) => (
-              <div key={order.id || index} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <div className="font-bold text-gray-900">{order.orderNumber || `ORD-00${index+1}`}</div>
-                  <div className="text-sm text-gray-500">
-                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
+            stats.recentActivity.map((activity, index) => (
+              <div key={activity.id || index} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0 mt-1">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                  </div>
+                  <div className="overflow-hidden">
+                    <div className="font-bold text-gray-900">
+                      ออเดอร์ {activity.orderNumber || activity.order_number || `#${index+1}`}
+                    </div>
+                    {/* ข้อมูลลูกค้า เบอร์โทร */}
+                    <div className="text-sm text-gray-600 mt-0.5">
+                      👤 {activity.customerName || activity.customer_name || 'ลูกค้าทั่วไป'} 
+                      <span className="text-gray-500 ml-1">({activity.phone || 'ไม่มีเบอร์โทร'})</span>
+                    </div>
+                    {/* 🌟 เพิ่มข้อมูลที่อยู่ตรงนี้ */}
+                    <div className="text-xs text-gray-500 mt-1 max-w-md truncate" title={activity.address}>
+                      📍 {activity.address || 'ไม่มีข้อมูลที่อยู่'}
+                    </div>
+                    {/* วันที่ */}
+                    <div className="text-xs text-gray-400 mt-1">
+                      📅 {activity.createdAt || activity.created_at ? new Date(activity.createdAt || activity.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-bold text-green-600">+{formatCurrency(order.profit || 100)}</div>
-                  <div className="text-sm text-gray-500">{order.status || 'PAID'}</div>
+                <div className="text-right shrink-0 ml-4">
+                  <div className="font-bold text-green-600 text-lg">
+                    +{formatCurrency(activity.resellerProfit || activity.reseller_profit || 0)}
+                  </div>
+                  <div className="text-xs font-semibold text-gray-500 mt-1 bg-gray-200 px-2 py-1 rounded-full inline-block">
+                    {activity.status || 'PAID'}
+                  </div>
                 </div>
               </div>
             ))
