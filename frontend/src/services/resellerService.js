@@ -3,7 +3,7 @@ import api from './api';
 export const resellerService = {
 
   getAllResellers: async () => {
-    const response = await api.get('/users');
+    const response = await api.get('/admin/reseller');
     return response.data
       .filter(user => user.role === 'reseller')
       .sort((a, b) => b.id - a.id); // 🌟 เพิ่มบรรทัดนี้เพื่อเรียง id จากมากไปน้อย

@@ -1,29 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+// 🌟 Import walletService ที่คุณเพิ่งสร้างมาใช้งาน
 import { walletService } from '../../services/walletService';
 import { formatCurrency, formatDate } from '../../utils/formatter';
 import Loading from '../../components/Loading';
 
 const ResellerWallet = () => {
   const { user } = useAuth();
-  const [wallet, setWallet] = useState(null);
+  // ตั้งค่าเริ่มต้นให้ wallet เป็น object ที่มีโครงสร้างรอไว้เลย
+  const [wallet, setWallet] = useState({ balance: 0, transactions: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchWallet = async () => {
       try {
-        const data = await walletService.getWalletDetails(user.id);
+        setLoading(true);
+        
+        // 🌟 1. ยิง API 2 เส้นพร้อมกันเพื่อความรวดเร็ว
+        const [balance, logData] = await Promise.all([
+          walletService.getWalletBalance(user.id),
+          walletService.getWalletLog(user.id)
+        ]);
+
+        // 🌟 2. นำข้อมูลประวัติมาเรียงลำดับจากใหม่ไปเก่า (เช็คเผื่อกรณี logData ไม่ใช่ Array ด้วย)
+        const transactions = Array.isArray(logData) ? logData : [];
+        const sortedTransactions = transactions.sort(
+          (a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)
+        );
+
+        // 🌟 3. อัปเดต State
         setWallet({
-          ...data,
-          transactions: data.transactions.sort((a,b) => new Date(b.date) - new Date(a.date))
+          balance: balance,
+          transactions: sortedTransactions
         });
+
       } catch (err) {
-        console.error(err);
+        console.error("Fetch Wallet Error:", err);
       } finally {
         setLoading(false);
       }
     };
-    if (user) fetchWallet();
+
+    if (user?.id) fetchWallet();
   }, [user]);
 
   if (loading) return <Loading />;
@@ -35,6 +53,7 @@ const ResellerWallet = () => {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-lg p-8 text-white flex justify-between items-center">
           <div>
             <p className="text-blue-100 mb-2 font-medium">Available Balance</p>
+            {/* แสดงยอดเงิน */}
             <h3 className="text-5xl font-bold tracking-tight">{formatCurrency(wallet.balance)}</h3>
           </div>
           <div className="hidden md:block opacity-75">
@@ -58,12 +77,13 @@ const ResellerWallet = () => {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900">Profit from Order {tx.orderNumber}</p>
-                    <p className="text-sm text-gray-500">{formatDate(tx.date)}</p>
+                    {/* 💡 เช็คชื่อตัวแปรที่รับมาจาก Backend ตรงนี้ด้วยนะครับ */}
+                    <p className="font-bold text-gray-900">Profit from Order {tx.orderNumber || tx.orderId || tx.referenceId}</p>
+                    <p className="text-sm text-gray-500">{formatDate(tx.date || tx.createdAt)}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-green-600 text-lg">+{formatCurrency(tx.profit)}</span>
+                  <span className="font-bold text-green-600 text-lg">+{formatCurrency(tx.profit || tx.amount)}</span>
                 </div>
               </div>
             ))

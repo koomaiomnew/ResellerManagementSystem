@@ -30,6 +30,11 @@ public class ShopController {
         }
     }
 
+    @PutMapping("/{shopId}/products")
+    public ResponseEntity<?> updateShop(@PathVariable Long shopId, @RequestBody ShopProductReq entity ) {
+        return ResponseEntity.ok(shopService.updateShopProduct(shopId,entity));
+    }
+
     @PostMapping("/{shopId}/products")
     public ResponseEntity<?> addProductToShop(
             @PathVariable Long shopId,

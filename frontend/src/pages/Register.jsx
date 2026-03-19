@@ -10,26 +10,34 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
+    // ดึงข้อมูลจากฟอร์ม
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
 
-    // 🌟 สร้าง payload เพื่อแปลงชื่อตัวแปรให้ตรงกับ Java
+    // 🌟 สร้าง Payload ให้ตรงกับที่ Java Backend ต้องการเป๊ะๆ
     const payload = {
-      name: data.fullname,    // จับคู่ fullname ให้เป็น name
+      name: data.fullname,
       email: data.email,
       password: data.password,
-      phone: data.phone,
-      shopName: data.shopName,
-      role: "reseller"        // ใส่ role เข้าไปด้วย
+      role: "reseller",
+      phone: data.phone, // ส่งเบอร์โทรไปด้วย (เผื่อ Backend ใช้)
+      items: [
+        {
+          shopName: data.shopName, // ชื่อร้านค้าที่แสดงผล (กรอกภาษาไทยได้ มีเว้นวรรคได้)
+          shopSlug: data.shopSlug  // URL ของร้านค้า (ภาษาอังกฤษเท่านั้น)
+        }
+      ]
     };
 
     try {
-      // 🌟 เปลี่ยนจาก data เป็น payload
+      // เรียกใช้ API (ใช้ payload ที่จัดรูปแล้ว ไม่ใช่ data ดิบๆ)
       const res = await authService.registerReseller(payload);
-      showToast(res.message);
+      showToast('สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ', 'success');
       navigate('/login');
     } catch (err) {
-      showToast(err.message || 'Registration failed', 'error');
+      // แจ้งเตือน Error จากฝั่ง Backend เช่น "อีเมลนี้ถูกใช้งานแล้ว"
+      showToast(err.message || 'สมัครสมาชิกไม่สำเร็จ', 'error');
     } finally {
       setLoading(false);
     }
@@ -46,36 +54,60 @@ const Register = () => {
             Join RMS and start your own shop today
           </p>
         </div>
+        
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+          
+          {/* ----- ส่วนที่ 1: ข้อมูลส่วนตัว ----- */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Full Name</label>
-              <input name="fullname" type="text" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              <input name="fullname" type="text" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="สมชาย ใจดี" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Phone</label>
-              <input name="phone" type="tel" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              <input name="phone" type="tel" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0812345678" />
             </div>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Email Address</label>
-            <input name="email" type="email" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+            <input name="email" type="email" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="email@example.com" />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Password</label>
-            <input name="password" type="password" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+            <input name="password" type="password" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="••••••••" />
           </div>
+
+          <hr className="my-6 border-gray-200" />
+
+          {/* ----- ส่วนที่ 2: ข้อมูลร้านค้า ----- */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Desired Shop Name</label>
+            <label className="block text-sm font-medium text-gray-700">Shop Name (ชื่อร้านค้า)</label>
+            <input name="shopName" type="text" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="My Cool Shop" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Shop URL (ลิงก์ร้านค้า)</label>
             <div className="mt-1 flex rounded-md shadow-sm">
               <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
                 /shop/
               </span>
-              <input name="shopName" type="text" required pattern="[A-Za-z0-9_-]+" title="Only alphanumeric, dashes, and underscores" className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              <input 
+                name="shopSlug" 
+                type="text" 
+                required 
+                pattern="[A-Za-z0-9_-]+" 
+                title="ใช้ได้แค่ตัวอักษรภาษาอังกฤษ ตัวเลข ขีดกลาง(-) และขีดล่าง(_) เท่านั้น" 
+                className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                placeholder="my-cool-shop" 
+              />
             </div>
+            <p className="mt-1 text-xs text-gray-500">ใช้สำหรับเป็นลิงก์ร้านค้าของคุณ (ภาษาอังกฤษ ไม่มีเว้นวรรค)</p>
           </div>
 
-          <div className="pt-2">
+          {/* ----- ปุ่ม Submit ----- */}
+          <div className="pt-4">
             <button 
               type="submit" 
               disabled={loading}

@@ -1,8 +1,13 @@
 package com.rms.backend.users.service;
+import com.rms.backend.shops.dto.ShopCreateReq;
+import com.rms.backend.shops.entity.ShopEntity;
+import com.rms.backend.shops.repository.ShopRepository;
 import com.rms.backend.users.dto.AuthReq;
 import com.rms.backend.users.dto.UserReq;
 import com.rms.backend.users.entity.UserEntity;
 import com.rms.backend.users.repository.UserRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -10,6 +15,10 @@ import java.util.List;
 
 @Service
 public class UserService {
+
+    @Autowired
+    private ShopRepository shopRepository;
+
     private final UserRepository userRepository;
 
     public UserService(UserRepository userRepository) {
@@ -27,13 +36,6 @@ public class UserService {
         return dto;
     }
 
-    public List<UserReq> getAllUsers() {
-        List<UserEntity> entitys = userRepository.findAll();
-        List<UserReq> dtos = new ArrayList<>();
-        for(UserEntity entity : entitys)
-            dtos.add(mapToDto(entity));
-        return dtos;
-    }
 
     public UserReq getUserById(Long id) {
         UserEntity entity = userRepository.findById(id)
@@ -72,18 +74,20 @@ public class UserService {
 
     }
 
+    @Transactional // 🌟 ต้องใส่เพื่อให้ถ้า Shop พัง User ต้องไม่ถูกสร้าง (Rollback)
     public UserReq register(AuthReq.RegisterReq req) {
-        // เช็คอีเมลซ้ำ
+        // 1. เช็คอีเมลซ้ำ
         if (userRepository.findByEmail(req.getEmail()).isPresent()) {
             throw new RuntimeException("อีเมลนี้ถูกใช้งานแล้ว");
         }
 
+        // 2. สร้าง User และตั้งค่าพื้นฐาน
         UserEntity entity = new UserEntity();
         entity.setName(req.getName());
         entity.setEmail(req.getEmail());
+        // 🔒 แนะนำ: entity.setPassword(passwordEncoder.encode(req.getPassword()));
         entity.setPassword(req.getPassword());
         entity.setRole(req.getRole());
-
 
         if ("reseller".equalsIgnoreCase(req.getRole())) {
             entity.setStatus("pending");
@@ -91,7 +95,24 @@ public class UserService {
             entity.setStatus("approved");
         }
 
+        // 3. 🌟 ต้อง SAVE User ก่อนเพื่อให้ได้ ID
         UserEntity savedUser = userRepository.save(entity);
+
+        // 4. จัดการเรื่องร้านค้า (Shop)
+        if (req.getItems() != null && !req.getItems().isEmpty()) {
+            ShopCreateReq item = req.getItems().get(0);
+
+            if (shopRepository.findByShopSlug(item.getShopSlug()).isPresent()) {
+                throw new RuntimeException("ชื่อร้านนี้มีคนใช้แล้ว");
+            }
+            // สร้าง ShopEntity ใหม่ไปเลย (เพราะเป็นการสมัครสมาชิกใหม่)
+            ShopEntity shop = new ShopEntity();
+            shop.setUserId(savedUser.getId()); // 🌟 ตอนนี้ getId() มีค่าแล้ว!
+            shop.setShopName(item.getShopName());
+            shop.setShopSlug(item.getShopSlug());
+
+            shopRepository.save(shop);
+        }
 
         return mapToDto(savedUser);
     }

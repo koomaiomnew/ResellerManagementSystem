@@ -1,5 +1,10 @@
 package com.rms.backend.users.dto;
 
+import com.rms.backend.orders.dto.OrderItemReq;
+import com.rms.backend.shops.dto.ShopCreateReq;
+
+import java.util.List;
+
 public class AuthReq {
 
     // คลาสสำหรับรับข้อมูลตอนสมัครสมาชิก
@@ -7,7 +12,18 @@ public class AuthReq {
         private String name;
         private String email;
         private String password;
-        private String role; // 'admin' หรือ 'reseller'
+        private String role;
+        private List<ShopCreateReq>items;
+        // 'admin' หรือ 'reseller
+
+
+        public List<ShopCreateReq> getItems() {
+            return items;
+        }
+
+        public void setItems(List<ShopCreateReq> items) {
+            this.items = items;
+        }
 
         public String getName() {
             return name;

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,12 +18,20 @@ public class WalletService {
 
     // ฟังก์ชันเพิ่มเงินให้ตัวแทน (เรียกใช้ตอนสั่งซื้อสำเร็จ)
     public void addProfitToReseller(Long userId, Long orderId, BigDecimal profitAmount) {
-        if (profitAmount.compareTo(BigDecimal.ZERO) > 0) {
-            WalletEntity wallet = walletRepository.findById(userId).orElse(new WalletEntity());
-            if (wallet.getUserId() == null) {
-                wallet.setUserId(userId);
-                wallet.setBalance(BigDecimal.ZERO);
-            }
+        // พิมพ์ตรวจสอบค่ากำไรที่ส่งเข้ามา
+        System.out.println("Processing Profit: " + profitAmount + " for User: " + userId);
+
+        if (profitAmount != null && profitAmount.compareTo(BigDecimal.ZERO) > 0) {
+
+            // 🌟 เปลี่ยนจาก findById เป็น findByUserId
+            WalletEntity wallet = walletRepository.findByUserId(userId)
+                    .orElseGet(() -> {
+                        System.out.println("Creating new wallet for user: " + userId);
+                        WalletEntity newWallet = new WalletEntity();
+                        newWallet.setUserId(userId);
+                        newWallet.setBalance(BigDecimal.ZERO);
+                        return newWallet;
+                    });
 
             wallet.setBalance(wallet.getBalance().add(profitAmount));
             walletRepository.save(wallet);
@@ -31,7 +40,12 @@ public class WalletService {
             log.setUserId(userId);
             log.setOrderId(orderId);
             log.setAmount(profitAmount);
+            log.setCreatedAt(LocalDateTime.now()); // อย่าลืมใส่เวลาด้วยครับ
             walletLogRepository.save(log);
+
+            System.out.println("✅ Wallet & Log updated successfully!");
+        } else {
+            System.out.println("⚠️ No profit to add (Amount is 0 or null)");
         }
     }
 

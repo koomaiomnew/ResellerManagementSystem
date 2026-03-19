@@ -35,13 +35,16 @@ public class OrderService {
 
     @Transactional
     public OrderRes checkout(OrderReq req) {
+        // 1. ตรวจสอบร้านค้า
         ShopEntity shop = shopRepository.findById(req.getShopId())
                 .orElseThrow(() -> new RuntimeException("ไม่พบร้านค้านี้"));
 
+        // 2. เจนเลขที่ออเดอร์
         String dateStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         int randomNum = (int) (Math.random() * 9000) + 1000;
         String orderNumber = "ORD-" + dateStr + "-" + randomNum;
 
+        // 3. สร้าง Order เบื้องต้น
         OrderEntity order = new OrderEntity();
         order.setOrderNumber(orderNumber);
         order.setShopId(shop.getId());
@@ -52,12 +55,14 @@ public class OrderService {
         order.setResellerProfit(BigDecimal.ZERO);
         order.setStatus("ชำระเงินแล้ว");
 
-        order = orderRepository.save(order);
+        // บันทึกครั้งแรกเพื่อให้ได้ order.getId()
+        orderRepository.save(order);
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         BigDecimal totalProfit = BigDecimal.ZERO;
         List<OrderItemEntity> orderItems = new ArrayList<>();
 
+        // 4. วนลูปจัดการสินค้าและคำนวณเงิน
         for (OrderItemReq itemReq : req.getItems()) {
             ShopProductEntity shopProduct = shopProductRepository.findById(itemReq.getShopProductId())
                     .orElseThrow(() -> new RuntimeException("ไม่พบสินค้าในร้านรหัส: " + itemReq.getShopProductId()));
@@ -65,23 +70,27 @@ public class OrderService {
             ProductEntity product = productRepository.findById(shopProduct.getProductId())
                     .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลสินค้าส่วนกลาง"));
 
+            // เช็คสต็อก
             if (product.getStock() < itemReq.getQuantity()) {
                 throw new RuntimeException("ขออภัย สินค้า [" + product.getName() + "] สต็อกไม่เพียงพอ (เหลือ " + product.getStock() + " ชิ้น)");
             }
 
+            // ตัดสต็อกสินค้าส่วนกลาง
             product.setStock(product.getStock() - itemReq.getQuantity());
             productRepository.save(product);
 
-            BigDecimal costPrice = product.getMinPrice();
-            BigDecimal sellingPrice = shopProduct.getSellingPrice();
+            BigDecimal costPrice = product.getMinPrice(); // ราคาทุน
+            BigDecimal sellingPrice = shopProduct.getSellingPrice(); // ราคาขายของ Reseller
             int qty = itemReq.getQuantity();
 
+            // คำนวณยอดเงิน
             BigDecimal itemTotalAmount = sellingPrice.multiply(BigDecimal.valueOf(qty));
             BigDecimal itemProfit = (sellingPrice.subtract(costPrice)).multiply(BigDecimal.valueOf(qty));
 
             totalAmount = totalAmount.add(itemTotalAmount);
             totalProfit = totalProfit.add(itemProfit);
 
+            // สร้าง Item ของออเดอร์
             OrderItemEntity orderItem = new OrderItemEntity();
             orderItem.setOrderId(order.getId());
             orderItem.setProductId(product.getId());
@@ -92,14 +101,19 @@ public class OrderService {
             orderItems.add(orderItem);
         }
 
+        // 5. บันทึกรายการสินค้าทั้งหมด
         orderItemRepository.saveAll(orderItems);
 
+        // 6. อัปเดตยอดรวมใน Order หลัก
         order.setTotalAmount(totalAmount);
         order.setResellerProfit(totalProfit);
         orderRepository.save(order);
 
+        // 7. 💰 โอนเงินเข้ากระเป๋า Reseller และสร้าง Log
+        // เมธอดนี้จะไปจัดการ WalletRepository และ WalletLogRepository ให้เอง
         walletService.addProfitToReseller(shop.getUserId(), order.getId(), totalProfit);
 
+        // 8. ส่งผลลัพธ์กลับ
         return mapToOrderRes(order);
     }
 
