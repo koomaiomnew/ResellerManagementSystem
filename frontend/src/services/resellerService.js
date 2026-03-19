@@ -1,54 +1,49 @@
-import { getDB, setDB } from '../utils/mockData';
+import api from './api';
 
 export const resellerService = {
+  // 1. ดึงรายชื่อตัวแทนจำหน่ายทั้งหมด
   getAllResellers: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const users = getDB('mock_users');
-        resolve(users.filter(u => u.role === 'RESELLER'));
-      }, 300);
-    });
+    try {
+      // 🌟 ดึง User ทั้งหมดจาก Backend (เพราะ Java มีแค่ GET /api/users)
+      const response = await api.get('/users'); 
+      // 🌟 กรองเอาเฉพาะคนที่มี role เป็น RESELLER มาแสดง
+      const resellers = response.data.filter(user => user.role === 'RESELLER');
+      return resellers;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'ดึงข้อมูลตัวแทนจำหน่ายไม่สำเร็จ');
+    }
   },
 
+  // 2. อนุมัติ (Approve) ตัวแทนจำหน่าย
   approveReseller: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let users = getDB('mock_users');
-        const index = users.findIndex(u => u.id === id);
-        if (index > -1) {
-          users[index].status = 'APPROVED';
-          setDB('mock_users', users);
-          resolve(users[index]);
-        }
-      }, 300);
-    });
+    try {
+      // 🌟 ใช้ api.patch เพราะ Backend คุณใช้ @PatchMapping
+      const response = await api.patch(`/users/${id}/status`, { status: 'APPROVED' });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'อนุมัติบัญชีไม่สำเร็จ');
+    }
   },
 
+  // 3. ปฏิเสธ (Reject) ตัวแทนจำหน่าย
   rejectReseller: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let users = getDB('mock_users');
-        const index = users.findIndex(u => u.id === id);
-        if (index > -1) {
-          users[index].status = 'REJECTED';
-          setDB('mock_users', users);
-          resolve(users[index]);
-        }
-      }, 300);
-    });
+    try {
+      // 🌟 ใช้ api.patch เช่นกัน
+      const response = await api.patch(`/users/${id}/status`, { status: 'REJECTED' });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'ปฏิเสธบัญชีไม่สำเร็จ');
+    }
   },
 
-  getShopDetails: async (shopName) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = getDB('mock_users');
-        const shop = users.find(u => u.shopName === shopName && u.role === 'RESELLER' && u.status === 'APPROVED');
-        if (shop) {
-          resolve(shop);
-        } else {
-          reject(new Error('Shop not found'));
-        }
-      }, 300);
-    });
+  // 4. ดึงข้อมูลหน้าร้านค้าตามชื่อร้าน (Shop Slug)
+  getShopDetails: async (shopSlug) => {
+    try {
+      // 🌟 ตรงกับ @GetMapping("/{shopSlug}") ของ ShopController
+      const response = await api.get(`/shops/${shopSlug}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'ไม่พบข้อมูลร้านค้านี้');
+    }
   }
 };

@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+// import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { initMockDB } from './utils/mockData';
 import Toast from './components/Toast';
 
 // Auth Pages
+import LandingPage from './pages/LandingPage'; // 🌟 เพิ่มบรรทัดนี้เพื่อนำเข้า LandingPage
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -31,7 +32,7 @@ import PublicShop from './pages/customer/PublicShop';
 import Checkout from './pages/customer/Checkout';
 import OrderSuccess from './pages/customer/OrderSuccess';
 import OrderTracking from './pages/customer/OrderTracking';
-
+import React, { useEffect } from 'react';
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -45,7 +46,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Public / Auth */}
-          <Route path="/" element={<Navigate to="/login" />} />
+          {/* 🌟 เปลี่ยนจาก Navigate to="/login" เป็นหน้า LandingPage */}
+          <Route path="/" element={<LandingPage />} /> 
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
