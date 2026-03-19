@@ -10,33 +10,49 @@ const ResellerCatalog = () => {
   const { user } = useAuth();
 
   const [products, setProducts] = useState([]);
+  const [shop, setShop] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // ✅ โหลดสินค้า global
+  // 🔥 FIX: ไม่ยิง API ถ้า user ยังไม่มา
   useEffect(() => {
-    const fetch = async () => {
+    if (!user?.id) return;
+
+    const init = async () => {
+      setLoading(true);
       try {
-        const data = await productService.getAllProducts();
-        console.log('CATALOG:', data);
-        setProducts(data || []);
-      } catch (e) {
-        showToast('โหลดสินค้าไม่สำเร็จ', 'error');
+        const [productData, shopData] = await Promise.all([
+          productService.getAllProducts(),
+          shopService.getMyShop(user.id)
+        ]);
+
+        setProducts(productData);
+        setShop(shopData);
+
+      } catch (err) {
+        console.error(err);
+
+        // 🔥 ถ้าไม่มีร้าน → แจ้ง user
+        if (err.message.includes('ไม่พบร้านค้า')) {
+          showToast('คุณยังไม่มีร้านค้า กรุณาสร้างร้านก่อน', 'error');
+        } else {
+          showToast('โหลดข้อมูลไม่สำเร็จ', 'error');
+        }
+
       } finally {
         setLoading(false);
       }
     };
-    fetch();
-  }, []);
 
-  // ✅ เปิด modal
+    init();
+  }, [user?.id]); // 🔥 FIX: ไม่ใช้ [user] เดี๋ยว render ซ้ำ
+
   const handleAddClick = (product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
   };
 
-  // ✅ เพิ่มสินค้าเข้าร้าน (API จริง)
   const handleSaveToShop = async (e) => {
     e.preventDefault();
 
@@ -44,18 +60,17 @@ const ResellerCatalog = () => {
     const sellingPrice = Number(formData.get('sellingPrice'));
 
     if (sellingPrice < selectedProduct.minPrice) {
-      showToast(`ราคาต้อง ≥ ${selectedProduct.minPrice}`, 'error');
+      showToast(
+        `ราคาขายต้องไม่ต่ำกว่าราคาขั้นต่ำ ฿${selectedProduct.minPrice}`,
+        'error'
+      );
       return;
     }
 
     try {
-      // 🔥 ดึง shop จริง
-      const shop = await shopService.getShopProductsBySlug(user.shopSlug);
-
-      console.log('SHOP:', shop);
-
       if (!shop?.id) {
-        throw new Error('ไม่พบ shop');
+        showToast('ไม่พบร้านค้า กรุณาสร้างร้านก่อน', 'error');
+        return;
       }
 
       await shopService.addProductToShop(shop.id, {
@@ -63,12 +78,14 @@ const ResellerCatalog = () => {
         sellingPrice
       });
 
-      showToast('เพิ่มสินค้าแล้ว!', 'success');
+      showToast('เพิ่มสินค้าเรียบร้อยแล้ว');
+
       setIsModalOpen(false);
+      setSelectedProduct(null); // 🔥 reset state
 
     } catch (err) {
       console.error(err);
-      showToast(err.message, 'error');
+      showToast(err.message || 'เพิ่มสินค้าไม่สำเร็จ', 'error');
     }
   };
 
@@ -76,41 +93,69 @@ const ResellerCatalog = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Global Product Catalog</h2>
+      <h2 className="text-2xl font-bold text-gray-800">
+        คลังสินค้าส่วนกลาง
+      </h2>
 
-      <div className="grid grid-cols-4 gap-6">
-        {products.map(p => (
-          <ProductCard
-            key={p.id}
-            product={p}
-            isCatalog
-            onAction={handleAddClick}
-          />
-        ))}
-      </div>
+      {/* 🔥 ถ้าไม่มีสินค้า */}
+      {products.length === 0 ? (
+        <p className="text-gray-500">ไม่มีสินค้าในระบบ</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {products.map(product => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              isCatalog={true}
+              onAction={handleAddClick}
+            />
+          ))}
+        </div>
+      )}
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-xl w-96">
-            <h3 className="font-bold mb-2">{selectedProduct.name}</h3>
-            <p className="text-sm mb-4">Min Price: {selectedProduct.minPrice}</p>
+      {isModalOpen && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">
+              เพิ่มสินค้าเข้าร้านค้า
+            </h3>
 
-            <form onSubmit={handleSaveToShop}>
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+              <p className="font-bold text-blue-800 text-lg">
+                {selectedProduct.name}
+              </p>
+              <p className="text-sm text-blue-600">
+                ราคาขั้นต่ำ: ฿{selectedProduct.minPrice}
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveToShop} className="space-y-4">
               <input
                 type="number"
                 name="sellingPrice"
-                defaultValue={selectedProduct.minPrice}
                 min={selectedProduct.minPrice}
-                className="border p-2 w-full mb-4"
+                defaultValue={selectedProduct.minPrice}
+                required
+                className="w-full border-gray-300 rounded-lg px-4 py-3 border"
               />
 
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setIsModalOpen(false)}>
-                  Cancel
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setSelectedProduct(null);
+                  }}
+                  className="px-4 py-2 bg-gray-200 rounded-lg"
+                >
+                  ยกเลิก
                 </button>
-                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-                  Add
+
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                >
+                  ยืนยันเพิ่มสินค้า
                 </button>
               </div>
             </form>

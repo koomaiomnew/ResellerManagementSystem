@@ -5,7 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="816d7434-4bb6-44f6-9d91-b6f946974d87" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/frontend/src/services/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/services/api.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rms-backend/src/main/java/com/rms/backend/shops/controller/ShopController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rms-backend/src/main/java/com/rms/backend/shops/controller/ShopController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rms-backend/src/main/java/com/rms/backend/shops/repository/ShopProductRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rms-backend/src/main/java/com/rms/backend/shops/repository/ShopProductRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rms-backend/src/main/java/com/rms/backend/shops/repository/ShopRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rms-backend/src/main/java/com/rms/backend/shops/repository/ShopRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rms-backend/src/main/java/com/rms/backend/shops/service/ShopService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rms-backend/src/main/java/com/rms/backend/shops/service/ShopService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/admin/AdminDashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/admin/AdminDashboard.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/reseller/ResellerCatalog.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/reseller/ResellerCatalog.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/services/shopService.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/services/shopService.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

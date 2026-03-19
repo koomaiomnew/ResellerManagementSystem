@@ -2,7 +2,6 @@ package com.rms.backend.shops.controller;
 
 import com.rms.backend.shops.dto.ShopProductReq;
 import com.rms.backend.shops.entity.ShopEntity;
-import com.rms.backend.shops.entity.ShopProductEntity;
 import com.rms.backend.shops.service.ShopService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +15,6 @@ public class ShopController {
 
     @Autowired
     private ShopService shopService;
-
 
     @GetMapping
     public ResponseEntity<List<ShopEntity>> findAll() {
@@ -33,7 +31,9 @@ public class ShopController {
     }
 
     @PostMapping("/{shopId}/products")
-    public ResponseEntity<?> addProductToShop(@PathVariable Long shopId, @RequestBody ShopProductReq req) {
+    public ResponseEntity<?> addProductToShop(
+            @PathVariable Long shopId,
+            @RequestBody ShopProductReq req) {
         try {
             return ResponseEntity.ok(shopService.addProductToShop(shopId, req));
         } catch (Exception e) {
@@ -41,7 +41,7 @@ public class ShopController {
         }
     }
 
-    @GetMapping("/{shopSlug}")
+    @GetMapping("/slug/{shopSlug}")
     public ResponseEntity<?> getShopProductsBySlug(@PathVariable String shopSlug) {
         try {
             return ResponseEntity.ok(shopService.getProductsByShopSlug(shopSlug));
@@ -49,9 +49,20 @@ public class ShopController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @DeleteMapping("/{id}")
+
+    // 🔥 แก้ delete ให้ถูก
+    @DeleteMapping("/products/{id}")
     public ResponseEntity<?> deleteProductFromShop(@PathVariable Long id) {
         shopService.deleteProductFromShop(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/me/{userId}")
+    public ResponseEntity<?> getMyShop(@PathVariable Long userId) {
+        try {
+            return ResponseEntity.ok(shopService.getShopByUserId(userId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
