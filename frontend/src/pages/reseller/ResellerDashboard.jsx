@@ -20,25 +20,30 @@ const ResellerDashboard = () => {
       try {
         setLoading(true);
 
-        const [shopData, balance] = await Promise.all([
+        // 🚀 ยิง API พร้อมกัน 3 เส้นรวดเดียวเลย! (ไม่มี Waterfall แล้ว)
+        const [shopData, balance, allOrders] = await Promise.all([
           shopService.getMyShop(user.id).catch(() => null),
-          walletService.getWalletBalance(user.id).catch(() => 0)
+          walletService.getWalletBalance(user.id).catch(() => 0),
+          orderService.getOrdersByUser(user.id).catch(() => []) // 🌟 ใช้ API ใหม่ตรงนี้!
         ]);
 
         setShop(shopData);
 
-        let actualOrders = [];
-        if (shopData && shopData.id) {
-            actualOrders = await orderService.getOrdersByShop(shopData.id).catch(() => []);
-        }
+        // 🌟 นำออเดอร์ทั้งหมดมากรองเฉพาะที่กำลังดำเนินการ (Active)
+        const hiddenStatuses = ['COMPLETED', 'FAILED', 'CANCELLED', 'FALSE', 'สำเร็จ', 'ยกเลิก', 'โยนทิ้ง'];
+        const activeOrders = allOrders.filter(order => {
+            const currentStatus = order.status ? order.status : '';
+            return !hiddenStatuses.includes(currentStatus) && !hiddenStatuses.includes(currentStatus.toUpperCase());
+        });
 
-        const sortedOrders = actualOrders.sort(
+        // เรียงลำดับจากใหม่ไปเก่า
+        const sortedOrders = activeOrders.sort(
           (a, b) => new Date(b.createdAt || b.created_at) - new Date(a.createdAt || a.created_at)
         );
 
         setStats({
           balance: balance,
-          totalOrders: actualOrders.length, 
+          totalOrders: activeOrders.length, // นับเฉพาะที่ค้างอยู่
           recentActivity: sortedOrders.slice(0, 5) 
         });
 
@@ -73,10 +78,11 @@ const ResellerDashboard = () => {
       subLabel: 'Wallet Balance' 
     },
     { 
-      label: 'จำนวนออเดอร์ทั้งหมด', 
+      // เปลี่ยน Label ให้ชัดเจน
+      label: 'ออเดอร์ที่กำลังดำเนินการ', 
       value: stats.totalOrders, 
       color: 'text-purple-600',
-      subLabel: 'Total Sales' 
+      subLabel: 'Active Orders' 
     },
   ];
 
@@ -102,10 +108,13 @@ const ResellerDashboard = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-md p-6 mt-8">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">ออเดอร์ล่าสุด (Recent Orders)</h3>
+        <h3 className="text-lg font-bold text-gray-800 mb-4">ออเดอร์ล่าสุดที่ต้องจัดการ (Active Orders)</h3>
         <div className="space-y-4">
           {stats.recentActivity.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">ยังไม่มีรายการ</p>
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-2">ไม่มีออเดอร์ที่ค้างอยู่</p>
+              <p className="text-xs text-gray-400">ออเดอร์ที่สำเร็จหรือยกเลิกแล้วจะไม่แสดงที่นี่</p>
+            </div>
           ) : (
             stats.recentActivity.map((activity, index) => (
               <div key={activity.id || index} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
@@ -122,7 +131,7 @@ const ResellerDashboard = () => {
                       👤 {activity.customerName || activity.customer_name || 'ลูกค้าทั่วไป'} 
                       <span className="text-gray-500 ml-1">({activity.phone || 'ไม่มีเบอร์โทร'})</span>
                     </div>
-                    {/* 🌟 เพิ่มข้อมูลที่อยู่ตรงนี้ */}
+                    {/* ข้อมูลที่อยู่ */}
                     <div className="text-xs text-gray-500 mt-1 max-w-md truncate" title={activity.address}>
                       📍 {activity.address || 'ไม่มีข้อมูลที่อยู่'}
                     </div>

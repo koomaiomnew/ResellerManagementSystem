@@ -4,6 +4,8 @@ import { orderService } from "../../services/orderService";
 import { formatCurrency } from "../../utils/formatter";
 import Loading from "../../components/Loading";
 import OrderTable from "../../components/OrderTable";
+// สมมติว่าคุณมี component สำหรับแจ้งเตือน ถ้าไม่มีสามารถคอมเมนต์ออกแล้วใช้ alert() แทนได้
+import { showToast } from "../../components/Toast"; 
 
 import {
   Wallet,
@@ -24,11 +26,10 @@ const AdminDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // --- ฟังก์ชันดึงข้อมูล Dashboard ---
   const fetchDashboardData = async () => {
-    setLoading(true);
-
-    // 🌟 1. ดึงสถิติ (อ้างอิงตาม JSON จาก Postman ที่คุณส่งมา)
     try {
+      // 1. ดึงสถิติ Dashboard
       const statsData = await adminService.getDashboardStats();
       if (statsData) {
         setStats({
@@ -39,29 +40,24 @@ const AdminDashboard = () => {
           totalResellers: statsData.totalResellers || 0,
         });
       }
-    } catch (statsErr) {
-      console.error("❌ ดึงสถิติพัง Error:", statsErr);
-    }
 
-    // 🌟 2. ดึงรายการ Orders (ใช้ getActiveOrders ตามชื่อใน Service ของคุณ)
-    try {
+      // 2. ดึงรายการออเดอร์ (🌟 เรียก getActiveOrders ให้ตรงกับ orderService ของคุณ)
       const ordersData = await orderService.getActiveOrders();
       
       if (Array.isArray(ordersData)) {
-        // กรองสถานะที่ไม่ต้องการแสดง
-        const hiddenStatuses = ['COMPLETED', 'FAILED', 'CANCELLED', 'FALSE'];
+        // (ตัวเลือก) กรองสถานะที่ทำเสร็จแล้วออก เพื่อให้แอดมินดูแค่งานที่ต้องทำ
+        const hiddenStatuses = ['COMPLETED', 'FAILED', 'CANCELLED', 'FALSE', 'สำเร็จ', 'ยกเลิก'];
         
         const activeOrders = ordersData.filter(order => {
-          const currentStatus = order.status ? order.status.toUpperCase() : '';
-          return !hiddenStatuses.includes(currentStatus);
+          const currentStatus = order.status ? order.status : '';
+          return !hiddenStatuses.includes(currentStatus) && !hiddenStatuses.includes(currentStatus.toUpperCase());
         });
 
-        // 🚀 จัดการเรียงลำดับ และป้องกัน Error กรณี createdAt เป็น null
+        // 🌟 เรียงลำดับจากออเดอร์ใหม่ไปเก่า และป้องกันแอปพังกรณี createdAt เป็น null
         const sortedOrders = [...activeOrders].sort((a, b) => {
           const dateA = a.createdAt || a.created_at;
           const dateB = b.createdAt || b.created_at;
           
-          // ถ้าวันที่เป็น null ให้ค่าเป็น 0 เพื่อไม่ให้ฟังก์ชัน sort พัง
           const timeA = dateA ? new Date(dateA).getTime() : 0;
           const timeB = dateB ? new Date(dateB).getTime() : 0;
           
@@ -70,124 +66,156 @@ const AdminDashboard = () => {
         
         setRecentOrders(sortedOrders);
       }
-    } catch (orderErr) {
-      console.error("❌ ดึง Orders พัง (เรียก getActiveOrders):", orderErr);
+    } catch (err) {
+      console.error("❌ Dashboard Error:", err);
+      // โชว์แจ้งเตือนถ้ามี
+      if (typeof showToast === 'function' && loading) {
+        showToast("ไม่สามารถโหลดข้อมูลได้", "error");
+      }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
+  // --- ฟังก์ชันอัปเดตสถานะ (ส่งไปให้ OrderTable ใช้งาน) ---
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      // ตรวจสอบว่าใน orderService มี updateStatus หรือยัง
+      // 🚀 ยิง API อัปเดตสถานะ
       await orderService.updateStatus(orderId, newStatus);
+      
+      if (typeof showToast === 'function') {
+        showToast(`อัปเดตออเดอร์ #${orderId} เป็น '${newStatus}' เรียบร้อย`, "success");
+      } else {
+        alert(`อัปเดตออเดอร์ #${orderId} เป็น '${newStatus}' เรียบร้อย`);
+      }
+      
+      // 🔄 ดึงข้อมูลใหม่ทันทีเพื่อให้ตารางอัปเดตสถานะล่าสุด
       fetchDashboardData(); 
     } catch (err) {
       console.error("Update Status Error:", err);
+      if (typeof showToast === 'function') {
+        showToast("อัปเดตสถานะไม่สำเร็จ กรุณาลองใหม่", "error");
+      } else {
+        alert("อัปเดตสถานะไม่สำเร็จ");
+      }
     }
   };
 
+  useEffect(() => {
+    setLoading(true);
+    fetchDashboardData();
+  }, []);
+
   if (loading) return <Loading />;
 
+  // ข้อมูลสำหรับ Card สถิติ
   const statCards = [
     {
       label: "Total Sales", 
       value: formatCurrency(stats.totalSales), 
       icon: <Wallet size={18} />,
       color: "text-blue-600",
-      iconBg: "bg-blue-200/50",
-      cardBg: "bg-blue-50",
-      border: "border-b-4 border-blue-400",
+      iconBg: "bg-blue-100",
+      cardBg: "bg-white",
+      border: "border-b-4 border-blue-500",
     },
     {
       label: "Platform Profit",
       value: formatCurrency(stats.totalProfit), 
       icon: <TrendingUp size={18} />,
       color: "text-emerald-600",
-      iconBg: "bg-emerald-200/50",
-      cardBg: "bg-emerald-50",
-      border: "border-b-4 border-emerald-400",
+      iconBg: "bg-emerald-100",
+      cardBg: "bg-white",
+      border: "border-b-4 border-emerald-500",
     },
     {
       label: "Total Orders",
       value: stats.totalOrders.toLocaleString(), 
       icon: <ShoppingCart size={18} />,
       color: "text-purple-600",
-      iconBg: "bg-purple-200/50",
-      cardBg: "bg-purple-50",
-      border: "border-b-4 border-purple-400",
+      iconBg: "bg-purple-100",
+      cardBg: "bg-white",
+      border: "border-b-4 border-purple-500",
     },
     {
       label: "Total Products",
       value: stats.totalProducts.toLocaleString(), 
       icon: <Package size={18} />,
       color: "text-orange-600",
-      iconBg: "bg-orange-200/50",
-      cardBg: "bg-orange-50",
-      border: "border-b-4 border-orange-400",
+      iconBg: "bg-orange-100",
+      cardBg: "bg-white",
+      border: "border-b-4 border-orange-500",
     },
     {
       label: "Total Resellers",
       value: stats.totalResellers.toLocaleString(), 
       icon: <Users size={18} />,
       color: "text-indigo-600",
-      iconBg: "bg-indigo-200/50",
-      cardBg: "bg-indigo-50",
-      border: "border-b-4 border-indigo-400",
+      iconBg: "bg-indigo-100",
+      cardBg: "bg-white",
+      border: "border-b-4 border-indigo-500",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-white p-6 space-y-6">
+    <div className="min-h-screen bg-gray-50/50 p-6 space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800">
-          Dashboard Overview
+        <h2 className="text-2xl font-black text-gray-800 tracking-tight">
+          ADMIN DASHBOARD
         </h2>
+        <p className="text-gray-500 text-sm">ภาพรวมระบบและรายการที่ต้องจัดการ</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+      {/* สถิติ 5 กล่อง */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {statCards.map((stat, idx) => (
           <div
             key={idx}
-            className={`${stat.cardBg} ${stat.border} rounded-xl p-4 shadow-sm hover:shadow-md transition relative overflow-hidden`}
+            className={`${stat.cardBg} ${stat.border} rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group`}
           >
-            <div className="absolute right-2 top-2 opacity-10 scale-[2]">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.iconBg} ${stat.color} group-hover:scale-110 transition-transform`}>
               {stat.icon}
             </div>
-            <div
-              className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${stat.iconBg} ${stat.color}`}
-            >
-              {stat.icon}
-            </div>
-            <p className="text-xs font-semibold text-gray-600 mb-1">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
               {stat.label}
             </p>
-            <h3 className="text-xl font-bold text-gray-900 truncate">
+            <h3 className="text-xl font-black text-gray-900 truncate">
               {stat.value}
             </h3>
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">
-          Active Orders 
-        </h3>
-        {recentOrders.length > 0 ? (
-          <OrderTable
-            orders={recentOrders}
-            role="ADMIN"
-            onUpdateStatus={handleUpdateStatus}
-          />
-        ) : (
-          <div className="text-center py-10 text-gray-500">
-            ไม่มีรายการออเดอร์ที่กำลังดำเนินการ
-          </div>
-        )}
+      {/* ตารางออเดอร์ */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
+          <h3 className="text-lg font-bold text-gray-800">
+            Active Orders <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-600 rounded-lg text-xs">{recentOrders.length}</span>
+          </h3>
+          <button 
+            onClick={fetchDashboardData}
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 underline"
+          >
+            Refresh Data
+          </button>
+        </div>
+        
+        <div className="p-2">
+          {recentOrders.length > 0 ? (
+            <OrderTable
+              orders={recentOrders}
+              role="ADMIN"
+              onUpdateStatus={handleUpdateStatus} // ส่งฟังก์ชันไปให้ปุ่มใน OrderTable ใช้งาน
+            />
+          ) : (
+            <div className="text-center py-20">
+              <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Package className="text-gray-300" size={32} />
+              </div>
+              <p className="text-gray-400 font-medium">ไม่มีรายการออเดอร์ที่ค้างอยู่</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,47 +1,55 @@
-import api from './api';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { orderService } from '../../services/orderService';
+import OrderTable from '../../components/OrderTable';
+import Loading from '../../components/Loading';
+import { showToast } from '../../components/Toast';
 
-export const resellerService = {
+const ResellerOrders = () => {
+  const { user } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  getAllResellers: async () => {
-    try {
-      const response = await api.get('/admin/resellers');
-      // ตรวจสอบว่า response.data เป็น array ก่อน
-      const data = Array.isArray(response.data) ? response.data : [];
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user?.id) return;
+
+      try {
+        setLoading(true);
+        
+        // 🚀 เรียก API ใหม่ที่หลังบ้านกรองมาให้เสร็จสรรพแล้ว! (โหลดข้อมูลน้อยลงมหาศาล)
+        const activeOrders = await orderService.getActiveOrdersByUser(user.id);
+
+        // จัดเรียงจากใหม่ไปเก่าอย่างเดียวพอ จบเลย
+        activeOrders.sort((a, b) => new Date(b.createdAt || b.created_at) - new Date(a.createdAt || a.created_at));
+        
+        setOrders(activeOrders);
+        
+      } catch (err) {
+        console.error("Error fetching active orders:", err);
+        showToast('ไม่สามารถโหลดข้อมูลออเดอร์ได้', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [user]);
+
+  if (loading) return <Loading />;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">ออเดอร์ที่ต้องดำเนินการ (Active Orders)</h2>
+      </div>
       
-      return data
-        .filter(user => user.role === 'reseller' || user.role === 'RESELLER') // เผื่อ Backend ส่งมาเป็นตัวใหญ่
-        .sort((a, b) => b.userId - a.userId); 
-    } catch (error) {
-      console.error("Error fetching resellers:", error);
-      throw error;
-    }
-  },
-
-  // อนุมัติ (Approve)
-  approveReseller: async (id) => {
-    try {
-  
-      const response = await api.patch(`/admin/resellers/${id}/status`, { status: 'approved' });
-      return response.data;
-    
-    } catch (error) {
-      console.error("Approve error:", error);
-      throw new Error(error.response?.data?.message || 'อนุมัติบัญชีไม่สำเร็จ');
-    }
-  },
-
-  // ปฏิเสธ (Reject)
-  rejectReseller: async (id) => {
-    try {
-      // ส่งสถานะไปอัปเดตผ่าน PATCH (เปลี่ยน path ให้ตรงกับ Backend ของคุณ)
-      const response = await api.patch(`/admin/resellers/${id}/status`, { status: 'rejected' });
-      return response.data;
-
-
-    } catch (error) {
-      console.error("Reject error:", error);
-      throw new Error(error.response?.data?.message || 'ปฏิเสธบัญชีไม่สำเร็จ');
-    }
-  }
-
+      <OrderTable 
+        orders={orders} 
+        role="reseller" 
+      />
+    </div>
+  );
 };
+
+export default ResellerOrders;

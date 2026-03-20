@@ -2,6 +2,7 @@ package com.rms.backend.admin.controller;
 
 import com.rms.backend.admin.dto.AdminResellerReq;
 import com.rms.backend.admin.service.AdminService;
+import com.rms.backend.orders.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+@CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -16,7 +18,6 @@ public class AdminController {
     @Autowired
     private AdminService adminService;
 
-    // 1. ดึงข้อมูล Dashboard (ยอดขายรวม, กำไรรวม, จำนวนคน)
     @GetMapping("/dashboard")
     public ResponseEntity<?> getDashboard() {
         try {
@@ -26,8 +27,6 @@ public class AdminController {
         }
     }
 
-    // 2. อนุมัติ หรือ ปฏิเสธ ตัวแทนจำหน่าย (TOR 2.1.3)
-    // ส่ง JSON เช่น { "status": "อนุมัติแล้ว" }
     @PatchMapping("/resellers/{userId}/status")
     public ResponseEntity<?> updateStatus(@PathVariable Long userId, @RequestBody Map<String, String> body) {
         adminService.approveReseller(userId, body.get("status"));
@@ -48,8 +47,11 @@ public class AdminController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @GetMapping("/resellers")
     public List<AdminResellerReq> getAllResellers() {
         return adminService.getAllUser();
     }
+
+
 }

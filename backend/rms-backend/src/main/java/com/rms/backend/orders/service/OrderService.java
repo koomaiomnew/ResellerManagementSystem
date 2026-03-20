@@ -118,11 +118,6 @@ public class OrderService {
         return mapToOrderRes(order);
     }
 
-    public List<OrderRes> getAllOrders() {
-        return orderRepository.findAll().stream()
-                .map(this::mapToOrderRes)
-                .collect(Collectors.toList());
-    }
 
     public OrderRes getOrderByNumber(String orderNumber) {
         OrderEntity order = orderRepository.findByOrderNumber(orderNumber)
@@ -175,5 +170,33 @@ public class OrderService {
         return activeOrders.stream().map(this::mapToOrderRes).collect(Collectors.toList());
     }
 
+    // ในไฟล์ OrderService.java
+    public List<OrderRes> getOrdersByUserId(Long userId) {
+        // 1. หา Shop ของ User คนนี้ก่อน (ดึงจาก Database)
+        ShopEntity shop = shopRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Shop not found"));
+
+        // 2. เอา Shop ID ไปดึงออเดอร์แล้วส่งกลับ
+        return getOrdersByShopId(shop.getId());
+    }
+
+    public List<OrderRes> getActiveOrdersByUserId(Long userId) {
+        // 1. หาร้านค้า
+        ShopEntity shop = shopRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Shop not found"));
+
+        // 2. ดึงออเดอร์ทั้งหมดของร้าน
+        List<OrderRes> allOrders = getOrdersByShopId(shop.getId());
+
+        // 🌟 3. ให้ Java กรองเฉพาะอันที่ Active แล้วค่อยส่งไปให้ React (เร็วขึ้น 100 เท่า!)
+        List<String> hiddenStatuses = Arrays.asList("COMPLETED", "FAILED", "CANCELLED", "FALSE", "สำเร็จ", "ยกเลิก", "โยนทิ้ง");
+
+        return allOrders.stream()
+                .filter(order -> {
+                    String status = order.getStatus() != null ? order.getStatus().toUpperCase() : "";
+                    return !hiddenStatuses.contains(status);
+                })
+                .collect(Collectors.toList());
+    }
 
 }
