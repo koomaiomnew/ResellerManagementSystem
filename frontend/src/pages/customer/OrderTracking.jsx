@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { orderService } from '../../services/orderService';
+import { orderService } from '../../services/orderService'; // ตรวจสอบว่าในไฟล์นี้มีฟังก์ชัน OrderTracking แล้ว
 import { showToast } from '../../components/Toast';
 import { formatCurrency, formatDate } from '../../utils/formatter';
 
 const OrderTracking = () => {
   const location = useLocation();
+  // รับค่า orderNumber มาจาก state ถ้ามี (กรณี navigate มาจากหน้า Checkout)
   const [orderQuery, setOrderQuery] = useState(location.state?.orderNumber || '');
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -18,17 +19,22 @@ const OrderTracking = () => {
     setLoading(true);
     setShowResult(false);
     try {
-      const data = await orderService.trackOrder(orderQuery);
+      // ✅ แก้ไข: เปลี่ยนมาเรียกใช้ orderService.OrderTracking ตามที่ระบุ
+      const data = await orderService.OrderTracking(orderQuery);
       setOrder(data);
+      
+      // หน่วงเวลาเล็กน้อยเพื่อให้ Animation การแสดงผลดูลื่นไหล
       setTimeout(() => setShowResult(true), 100);
     } catch (err) {
-      showToast('Order not found', 'error');
+      // แสดง Error message จากที่ throw ไว้ใน Service
+      showToast(err.message || 'ไม่พบข้อมูลการติดตาม', 'error');
       setOrder(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // ดึงข้อมูลอัตโนมัติถ้ามีเลข Order ส่งมาจากหน้าอื่น
   useEffect(() => {
     if (orderQuery) {
       handleSearch();
@@ -47,6 +53,7 @@ const OrderTracking = () => {
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
     )}
   ];
+
   const currentStepIdx = order ? steps.findIndex(s => s.key === order.status) : -1;
 
   return (
@@ -68,7 +75,7 @@ const OrderTracking = () => {
             Track Your Order
           </h1>
           <p className="text-slate-400 text-lg max-w-lg mx-auto mb-10">
-            Enter your order number to see the current shipping status.
+            กรอกหมายเลขคำสั่งซื้อของคุณเพื่อตรวจสอบสถานะการจัดส่ง
           </p>
 
           {/* Search Form */}
@@ -78,7 +85,7 @@ const OrderTracking = () => {
                 type="text" 
                 value={orderQuery}
                 onChange={(e) => setOrderQuery(e.target.value)}
-                placeholder="e.g. ORD-123456"
+                placeholder="เช่น ORD-123456"
                 className="w-full bg-white/10 backdrop-blur-md border border-white/15 text-white placeholder-slate-500 rounded-xl px-6 py-4 text-lg font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400/50 transition-all"
               />
             </div>
@@ -102,7 +109,6 @@ const OrderTracking = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 pb-20 relative z-10">
         {order && (
           <div className={`transition-all duration-500 ${showResult ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            {/* Status Card */}
             <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-white/60 overflow-hidden">
               
               {/* Order Header */}
@@ -125,9 +131,7 @@ const OrderTracking = () => {
               {/* Progress Steps */}
               <div className="p-6 sm:p-10">
                 <div className="relative flex justify-between items-center mb-4">
-                  {/* Background Line */}
                   <div className="absolute left-[16%] right-[16%] top-1/2 -translate-y-1/2 h-1 bg-slate-200 rounded-full"></div>
-                  {/* Active Line */}
                   <div 
                     className="absolute left-[16%] top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
                     style={{ width: currentStepIdx === 0 ? '0%' : currentStepIdx === 1 ? '34%' : '68%' }}
@@ -144,9 +148,7 @@ const OrderTracking = () => {
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
-                        ) : (
-                          step.icon
-                        )}
+                        ) : step.icon}
                       </div>
                       <span className={`mt-3 text-xs sm:text-sm font-semibold text-center transition-colors ${
                         idx <= currentStepIdx ? 'text-slate-800' : 'text-slate-400'
