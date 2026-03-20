@@ -16,5 +16,24 @@ export const orderService = {
     const response = await api.get('/orders/active');
     return response.data;
   }
-
+  ,
+  updateStatus: async (orderId, newStatus) => {
+    try {
+      const response = await api.patch(`/admin/orders/${orderId}/status`, {
+        status: newStatus
+      });
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+  getOrdersByUser: async (userId) => {
+    const response = await api.get(`/orders/user/${userId}`);
+    return response.data;
+  },
+  getActiveOrdersByUser: async (userId) => {
+    const response = await api.get(`/orders/user/${userId}/active`);
+    return response.data;
+  }
 };

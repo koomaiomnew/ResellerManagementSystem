@@ -74,8 +74,8 @@ const AdminOrders = () => {
           <p className="text-sm text-gray-500">จัดการรายการสั่งซื้อทั้งหมดในระบบ</p>
         </div>
 
-        {/* 🌟ปุ่ม Filter สไตล์ Tabs กะทัดรัด */}
-        <div className="inline-flex p-1 bg-gray-100 rounded-xl border border-gray-200">
+      
+        {/* <div className="inline-flex p-1 bg-gray-100 rounded-xl border border-gray-200">
           <button
             onClick={() => setViewMode('active')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -96,7 +96,7 @@ const AdminOrders = () => {
           >
             All Orders
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* 🌟 ส่วนแสดงตาราง */}

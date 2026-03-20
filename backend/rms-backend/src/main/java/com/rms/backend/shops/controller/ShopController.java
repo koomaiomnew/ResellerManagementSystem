@@ -46,7 +46,7 @@ public class ShopController {
         }
     }
 
-    @GetMapping("/slug/{shopSlug}")
+    @GetMapping("/{shopSlug}")
     public ResponseEntity<?> getShopProductsBySlug(@PathVariable String shopSlug) {
         try {
             return ResponseEntity.ok(shopService.getProductsByShopSlug(shopSlug));

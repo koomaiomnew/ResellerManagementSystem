@@ -46,4 +46,24 @@ public class OrderController {
     public ResponseEntity<List<OrderRes>> getActiveOrders() {
         return ResponseEntity.ok(orderService.getAllActiveOrders());
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<OrderRes>> getOrdersByUserId(@PathVariable Long userId) {
+        try {
+            // ให้ Service จัดการหา Shop และดึง Orders มาให้เลย
+            return ResponseEntity.ok(orderService.getOrdersByUserId(userId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    // 🌟 API ใหม่: ดึงเฉพาะออเดอร์ที่ Active (ค้างอยู่) ของตัวแทนคนนั้นๆ
+    @GetMapping("/user/{userId}/active")
+    public ResponseEntity<List<OrderRes>> getActiveOrdersByUserId(@PathVariable Long userId) {
+        try {
+            return ResponseEntity.ok(orderService.getActiveOrdersByUserId(userId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 }
