@@ -2,6 +2,7 @@ package com.rms.backend.admin.service;
 
 import com.rms.backend.admin.dto.AdminReq; // แนะนำเปลี่ยนชื่อจาก Req เป็น Res เพราะเป็นการส่งออก
 import com.rms.backend.admin.dto.AdminResellerReq;
+import com.rms.backend.admin.dto.ChartDataDTO;
 import com.rms.backend.orders.entity.OrderEntity;
 import com.rms.backend.orders.repository.OrderRepository;
 import com.rms.backend.product.repository.ProductRepository;
@@ -30,18 +31,33 @@ public class AdminService {
     public AdminReq getAdminDashboard() {
         long totalOrders = orderRepository.count();
 
-        // ใช้ Query จาก Repository จะเร็วกว่า stream มาก
         BigDecimal totalSales = orderRepository.sumTotalSales();
         BigDecimal totalProfit = orderRepository.sumTotalProfit();
 
-        // จัดการกรณีถ้ายังไม่มีออเดอร์ (ผลลัพธ์จะเป็น null) ให้เป็น Zero
         totalSales = (totalSales != null) ? totalSales : BigDecimal.ZERO;
         totalProfit = (totalProfit != null) ? totalProfit : BigDecimal.ZERO;
 
         long totalResellers = userRepository.countByRole("reseller");
         long totalProducts = productRepository.count();
 
-        return new AdminReq(totalOrders, totalSales, totalProfit, totalResellers, totalProducts);
+        // 🌟 ดึงข้อมูลกราฟรายเดือนจาก Repository
+        List<OrderRepository.MonthlyStats> monthlyStats = orderRepository.getMonthlySalesAndProfit();
+
+        // 🌟 แปลง MonthlyStats ให้เป็น ChartDataDTO ที่หน้าบ้านต้องการ
+        List<ChartDataDTO> chartData = monthlyStats.stream().map(stat -> {
+            BigDecimal sales = stat.getTotalSales() != null ? stat.getTotalSales() : BigDecimal.ZERO;
+            BigDecimal profit = stat.getTotalProfit() != null ? stat.getTotalProfit() : BigDecimal.ZERO;
+            // stat.getMonthName() จะได้ชื่อเดือนย่อ เช่น Jan, Feb, Mar
+            return new ChartDataDTO(stat.getMonthName(), sales, profit);
+        }).collect(Collectors.toList());
+
+        // สร้าง Object เพื่อส่งกลับ
+        AdminReq response = new AdminReq(totalOrders, totalSales, totalProfit, totalResellers, totalProducts);
+
+        // 🌟 ยัดข้อมูลกราฟใส่เข้าไป
+        response.setChartData(chartData);
+
+        return response;
     }
 
     @Transactional
