@@ -1,7 +1,14 @@
 import api from './api';
 
 export const shopService = {
-
+  getAllShops: async () => {
+    try {
+      const response = await api.get('/shops');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
   getMyShop: async (userId) => {
     try {
       if (!userId) throw new Error("userId is required");
@@ -15,10 +22,10 @@ export const shopService = {
   // 🔥 แก้ไข Path เอา /slug/ ออกให้ตรงกับ Backend
   getShopProductsBySlug: async (shopSlug) => {
     try {
-      const response = await api.get(`/shops/slug/${shopSlug}`); 
+      const response = await api.get(`/shops/${shopSlug}`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || error.response?.data || 'ไม่พบข้อมูลร้านค้า');
+      throw error;
     }
   },
 

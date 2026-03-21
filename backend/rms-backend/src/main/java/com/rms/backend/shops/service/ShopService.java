@@ -74,25 +74,51 @@ public class ShopService {
 
 
     public List<ShopProductReq> getProductsByShopSlug(String shopSlug) {
+        // 1. หาร้านค้า (Query 1)
         ShopEntity shop = shopRepository.findByShopSlug(shopSlug)
                 .orElseThrow(() -> new RuntimeException("ไม่พบร้าน"));
 
+        // 2. ดึงรายการสินค้าทั้งหมดในร้าน (Query 2)
         List<ShopProductEntity> shopProducts = shopProductRepository.findByShopId(shop.getId());
+
+        if (shopProducts.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // --- 🌟 จุดแก้เซิร์ฟเวอร์โหลด: ดึงข้อมูลแบบเหมาเข่ง ---
+
+        // รวบรวม Product ID ทั้งหมดที่ร้านนี้มี
+        List<Long> productIds = shopProducts.stream()
+                .map(ShopProductEntity::getProductId)
+                .toList();
+
+        // 3. ไปกวาดข้อมูล Product ส่วนกลางมารวดเดียว! (Query 3)
+        // **หมายเหตุ: ตรงนี้ใช้คำสั่ง findByIdIn ที่เราเพิ่งเติมไปใน ProductRepository ครับ**
+        List<ProductEntity> allProducts = productRepository.findByIdIn(productIds);
+
+        // จัดกลุ่ม Product ให้ค้นหาใน RAM ได้เร็วๆ
+        java.util.Map<Long, ProductEntity> productById = allProducts.stream()
+                .collect(java.util.stream.Collectors.toMap(ProductEntity::getId, p -> p));
+
+        // --- 🌟 ประกอบร่างคืนให้ Controller ---
         List<ShopProductReq> result = new ArrayList<>();
 
         for (ShopProductEntity sp : shopProducts) {
-            ProductEntity product = productRepository.findById(sp.getProductId())
-                    .orElseThrow();
+            // ดึงข้อมูลจาก Map ใน RAM
+            ProductEntity product = productById.get(sp.getProductId());
 
-            ShopProductReq dto = new ShopProductReq();
-            dto.setProductId(product.getId());
-            dto.setName(product.getName());
-            dto.setImageUrl(product.getImageUrl());
-            dto.setSellingPrice(sp.getSellingPrice());
+            if (product != null) {
+                ShopProductReq dto = new ShopProductReq();
 
-            result.add(dto);
+                dto.setShopProductID(sp.getId());
+                dto.setProductId(product.getId()); // ID สินค้ากลาง
+                dto.setName(product.getName());
+                dto.setImageUrl(product.getImageUrl());
+                dto.setSellingPrice(sp.getSellingPrice());
+
+                result.add(dto);
+            }
         }
-
         return result;
     }
 

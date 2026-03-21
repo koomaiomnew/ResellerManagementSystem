@@ -29,6 +29,7 @@ import ResellerWallet from './pages/reseller/ResellerWallet';
 
 // Customer Pages
 import PublicShop from './pages/customer/PublicShop';
+import ShopList from './pages/customer/ShopList';
 import Checkout from './pages/customer/Checkout';
 import OrderSuccess from './pages/customer/OrderSuccess';
 import OrderTracking from './pages/customer/OrderTracking';
@@ -53,10 +54,11 @@ function App() {
 
           {/* Customer / Public Shop */}
           <Route element={<ShopLayout />}>
-            <Route path="/shop/:shopName" element={<PublicShop />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/order-tracking" element={<OrderTracking />} />
+            <Route path="/shops" element={<ShopList />} />
+            <Route path="/shop/:shopSlug" element={<PublicShop />} />
           </Route>
 
           {/* Admin Routes */}

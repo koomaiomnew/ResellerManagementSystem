@@ -5,11 +5,20 @@ import com.rms.backend.product.entity.ProductEntity;
 import java.math.BigDecimal;
 
 public class ShopProductReq {
+    private Long shopProductID;
     private Long productId;
     private BigDecimal sellingPrice;
     private String imageUrl;
     private String name;
 
+
+    public Long getShopProductID() {
+        return shopProductID;
+    }
+
+    public void setShopProductID(Long shopProductID) {
+        this.shopProductID = shopProductID;
+    }
 
     public String getName() {
         return name;

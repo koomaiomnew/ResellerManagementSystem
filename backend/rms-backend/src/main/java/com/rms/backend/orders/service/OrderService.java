@@ -185,17 +185,12 @@ public class OrderService {
         ShopEntity shop = shopRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Shop not found"));
 
-        // 2. ดึงออเดอร์ทั้งหมดของร้าน
-        List<OrderRes> allOrders = getOrdersByShopId(shop.getId());
+        // 2. ดึง OrderEntity เฉพาะที่ Active จาก Database (เร็วปรู๊ด!)
+        List<OrderEntity> activeEntities = orderRepository.findActiveOrdersByShopId(shop.getId());
 
-        // 🌟 3. ให้ Java กรองเฉพาะอันที่ Active แล้วค่อยส่งไปให้ React (เร็วขึ้น 100 เท่า!)
-        List<String> hiddenStatuses = Arrays.asList("COMPLETED", "FAILED", "CANCELLED", "FALSE", "สำเร็จ", "ยกเลิก", "โยนทิ้ง");
-
-        return allOrders.stream()
-                .filter(order -> {
-                    String status = order.getStatus() != null ? order.getStatus().toUpperCase() : "";
-                    return !hiddenStatuses.contains(status);
-                })
+        // 3. แปลง Entity เป็น DTO (OrderRes) คืนให้ React
+        return activeEntities.stream()
+                .map(this::mapToOrderRes) // 🌟 เรียกใช้ฟังก์ชัน mapToOrderRes ของคุณตรงนี้ครับ!
                 .collect(Collectors.toList());
     }
 
