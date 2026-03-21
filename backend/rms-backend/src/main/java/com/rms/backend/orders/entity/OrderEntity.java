@@ -37,8 +37,14 @@ public class OrderEntity {
 
     private String status = "ชำระเงินแล้ว";
 
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 
     public Long getId() {
         return id;

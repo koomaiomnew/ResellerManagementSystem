@@ -54,9 +54,9 @@ public class OrderService {
         order.setPhone(req.getPhone());
         order.setTotalAmount(BigDecimal.ZERO);
         order.setResellerProfit(BigDecimal.ZERO);
-        order.setStatus("ชำระเงินแล้ว");
-
+        order.setStatus("paid");
         // บันทึกครั้งแรกเพื่อให้ได้ order.getId()
+        order.setCreatedAt(LocalDateTime.now());
         orderRepository.save(order);
 
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -155,6 +155,7 @@ public class OrderService {
         res.setItems(itemResList);
         return res;
     }
+
     public List<OrderRes> getOrdersByShopId(Long shopId) {
         List<OrderEntity> orders = orderRepository.findByShopId(shopId);
         return orders.stream()
