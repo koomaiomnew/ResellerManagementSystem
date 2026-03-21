@@ -5,9 +5,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "products")
 public class ProductEntity {
@@ -31,51 +35,4 @@ public class ProductEntity {
     private Integer stock;
 
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public BigDecimal getCostPrice() {
-        return costPrice;
-    }
-
-    public void setCostPrice(BigDecimal costPrice) {
-        this.costPrice = costPrice;
-    }
-
-    public BigDecimal getMinPrice() {
-        return minPrice;
-    }
-
-    public void setMinPrice(BigDecimal minPrice) {
-        this.minPrice = minPrice;
-    }
-
-    public Integer getStock() {
-        return stock;
-    }
-
-    public void setStock(Integer stock) {
-        this.stock = stock;
-    }
 }

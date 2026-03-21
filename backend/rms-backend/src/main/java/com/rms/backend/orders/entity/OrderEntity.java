@@ -4,6 +4,7 @@ import lombok.Data;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Data
 @Entity
@@ -39,11 +40,11 @@ public class OrderEntity {
 
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = OffsetDateTime.now();
     }
 
     public Long getId() {
@@ -118,11 +119,11 @@ public class OrderEntity {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 }
