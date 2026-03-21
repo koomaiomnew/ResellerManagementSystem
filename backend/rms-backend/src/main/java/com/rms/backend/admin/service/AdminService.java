@@ -15,7 +15,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -29,9 +33,35 @@ public class AdminService {
     @Autowired private ProductRepository productRepository;
     @Autowired private ShopRepository shopRepository;
 
-    @Transactional(readOnly = true) // สำคัญมากสำหรับการใช้ Stream
-    public Stream<OrderEntity> getOrdersStreamByMonth(int year, int month) {
-        return orderRepository.streamOrdersByMonth(year, month);
+    @Transactional(readOnly = true) // สำคัญมาก ห้ามลบ!
+    public void exportOrdersToCsv(int year, int month, OutputStream outputStream) {
+
+        // โค้ดวนลูปทั้งหมดถูกย้ายมาอยู่ที่นี่ เพื่อไม่ให้ Database โดนปิดก่อน
+        try (Stream<OrderEntity> orderStream = orderRepository.streamOrdersByMonth(year, month);
+             PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))) {
+
+            // 1. เขียน BOM กันภาษาไทยเป็นต่างดาว
+            writer.write('\ufeff');
+
+            // 2. เขียน Header ของ CSV
+            writer.println("Order Number,Customer Name,Total Amount,Reseller Profit,Status,Created At");
+
+            // 3. วนลูป Stream ดึงข้อมูลมาเขียน (คราวนี้ Database ไม่ปิดหนีแน่นอน)
+            orderStream.forEach(order -> {
+                writer.println(String.format("%s,%s,%s,%s,%s,%s",
+                        order.getOrderNumber(),
+                        order.getCustomerName() != null ? order.getCustomerName() : "-",
+                        order.getTotalAmount(),
+                        order.getResellerProfit(),
+                        order.getStatus(),
+                        order.getCreatedAt()));
+            });
+
+            writer.flush();
+
+        } catch (Exception e) {
+            throw new RuntimeException("เกิดข้อผิดพลาดในการเขียน CSV", e);
+        }
     }
 
     public AdminReq getAdminDashboard() {
