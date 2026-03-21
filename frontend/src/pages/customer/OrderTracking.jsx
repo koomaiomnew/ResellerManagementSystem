@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { orderService } from '../../services/orderService'; // ตรวจสอบว่าในไฟล์นี้มีฟังก์ชัน OrderTracking แล้ว
+import { orderService } from '../../services/orderService';
 import { showToast } from '../../components/Toast';
 import { formatCurrency, formatDate } from '../../utils/formatter';
 
 const OrderTracking = () => {
   const location = useLocation();
-  // รับค่า orderNumber มาจาก state ถ้ามี (กรณี navigate มาจากหน้า Checkout)
   const [orderQuery, setOrderQuery] = useState(location.state?.orderNumber || '');
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -19,14 +18,11 @@ const OrderTracking = () => {
     setLoading(true);
     setShowResult(false);
     try {
-      // ✅ แก้ไข: เปลี่ยนมาเรียกใช้ orderService.OrderTracking ตามที่ระบุ
       const data = await orderService.OrderTracking(orderQuery);
       setOrder(data);
       
-      // หน่วงเวลาเล็กน้อยเพื่อให้ Animation การแสดงผลดูลื่นไหล
       setTimeout(() => setShowResult(true), 100);
     } catch (err) {
-      // แสดง Error message จากที่ throw ไว้ใน Service
       showToast(err.message || 'ไม่พบข้อมูลการติดตาม', 'error');
       setOrder(null);
     } finally {
@@ -34,7 +30,6 @@ const OrderTracking = () => {
     }
   };
 
-  // ดึงข้อมูลอัตโนมัติถ้ามีเลข Order ส่งมาจากหน้าอื่น
   useEffect(() => {
     if (orderQuery) {
       handleSearch();
@@ -42,19 +37,21 @@ const OrderTracking = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ แก้ไข 1: อัปเดต Status ให้ตรงกับ 3 สถานะของระบบ (paid, shipped, completed)
   const steps = [
-    { key: 'PAID', label: 'Payment Confirmed', icon: (
+    { key: 'paid', label: 'Payment Confirmed', icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
     )},
-    { key: 'WAITING_SHIPMENT', label: 'Processing', icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-    )},
-    { key: 'SHIPPED', label: 'Shipped', icon: (
+    { key: 'shipped', label: 'Shipped', icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+    )},
+    { key: 'completed', label: 'Completed', icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
     )}
   ];
 
-  const currentStepIdx = order ? steps.findIndex(s => s.key === order.status) : -1;
+  // ✅ ป้องกันตัวพิมพ์เล็ก/ใหญ่ไม่ตรงกันด้วย .toLowerCase()
+  const currentStepIdx = order ? steps.findIndex(s => s.key === order.status?.toLowerCase()) : -1;
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-slate-50">
@@ -134,7 +131,7 @@ const OrderTracking = () => {
                   <div className="absolute left-[16%] right-[16%] top-1/2 -translate-y-1/2 h-1 bg-slate-200 rounded-full"></div>
                   <div 
                     className="absolute left-[16%] top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
-                    style={{ width: currentStepIdx === 0 ? '0%' : currentStepIdx === 1 ? '34%' : '68%' }}
+                    style={{ width: currentStepIdx === 0 ? '0%' : currentStepIdx === 1 ? '50%' : '100%' }}
                   ></div>
                   
                   {steps.map((step, idx) => (
@@ -171,12 +168,22 @@ const OrderTracking = () => {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
                     <div className="bg-white rounded-xl p-4 border border-slate-100">
-                      <span className="block text-xs text-slate-400 uppercase tracking-wider mb-1 font-medium">Item</span>
-                      <span className="font-semibold text-slate-800">{order.productName} <span className="text-slate-400">(x{order.quantity})</span></span>
+                      <span className="block text-xs text-slate-400 uppercase tracking-wider mb-2 font-medium">Items</span>
+                      {/* ✅ แก้ไข 2: Map ข้อมูลจาก array `items` */}
+                      <div className="flex flex-col gap-1">
+                        {order.items && order.items.map((item, index) => (
+                          <div key={index} className="font-semibold text-slate-800">
+                            {item.productName} <span className="text-slate-400 font-normal">(x{item.quantity})</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     <div className="bg-white rounded-xl p-4 border border-slate-100">
                       <span className="block text-xs text-slate-400 uppercase tracking-wider mb-1 font-medium">Order Date</span>
-                      <span className="font-semibold text-slate-800">{formatDate(order.createdAt)}</span>
+                      {/* ✅ ดักกรณี createdAt เป็น null */}
+                      <span className="font-semibold text-slate-800">
+                        {order.createdAt ? formatDate(order.createdAt) : '-'}
+                      </span>
                     </div>
                     <div className="sm:col-span-2 bg-white rounded-xl p-4 border border-slate-100">
                       <span className="block text-xs text-slate-400 uppercase tracking-wider mb-2 font-medium">Shipping To</span>
@@ -189,8 +196,9 @@ const OrderTracking = () => {
                         </div>
                         <div>
                           <span className="font-semibold text-slate-800 block">{order.customerName}</span>
-                          <span className="text-slate-500 block">{order.customerPhone}</span>
-                          <span className="text-slate-500 block mt-1">{order.customerAddress}</span>
+                          {/* ✅ แก้ไข 3: เปลี่ยนชื่อ Field ให้ตรงกับ JSON */}
+                          <span className="text-slate-500 block">{order.phone}</span>
+                          <span className="text-slate-500 block mt-1">{order.address}</span>
                         </div>
                       </div>
                     </div>

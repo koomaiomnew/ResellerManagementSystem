@@ -48,7 +48,6 @@ function App() {
         <Routes>
           {/* Public / Auth */}
           {/* 🌟 เปลี่ยนจาก Navigate to="/login" เป็นหน้า LandingPage */}
-          <Route path="/" element={<Login />} /> 
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
@@ -57,7 +56,7 @@ function App() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/order-tracking" element={<OrderTracking />} />
-            <Route path="/shops" element={<ShopList />} />
+            <Route path="/" element={<ShopList />} />
             <Route path="/shop/:shopSlug" element={<PublicShop />} />
           </Route>
 

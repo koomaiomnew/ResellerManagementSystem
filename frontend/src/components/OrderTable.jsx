@@ -10,8 +10,6 @@ const OrderTable = ({ orders, role, onUpdateStatus }) => {
     const s = status?.toUpperCase() || '';
     if (s === 'PAID' || s === 'ชำระเงินแล้ว') 
       return { bg: 'bg-amber-100 text-amber-800', dot: 'bg-amber-500', borderLeft: 'border-l-amber-400' };
-    if (s === 'WAITING_SHIPMENT' || s === 'กำลังเตรียมจัดส่ง') 
-      return { bg: 'bg-blue-100 text-blue-800', dot: 'bg-blue-500', borderLeft: 'border-l-blue-400' };
     if (s === 'SHIPPED' || s === 'จัดส่งแล้ว') 
       return { bg: 'bg-emerald-100 text-emerald-800', dot: 'bg-emerald-500', borderLeft: 'border-l-emerald-400' };
     if (s === 'COMPLETED' || s === 'สำเร็จ') 
@@ -31,7 +29,7 @@ const OrderTable = ({ orders, role, onUpdateStatus }) => {
           <thead className="text-gray-500 uppercase text-[11px] font-bold tracking-wider">
             <tr>
               <th className="px-6 py-2">Order No</th>
-              <th className="px-6 py-2">Date</th>
+              <th className="px-6 py-2">Address</th>
               <th className="px-6 py-2">Customer</th>
               <th className="px-6 py-2">Total</th>
               <th className="px-6 py-2">Status</th>
@@ -51,7 +49,7 @@ const OrderTable = ({ orders, role, onUpdateStatus }) => {
                   </td>
 
                   <td className="px-6 py-4 text-gray-500">
-                    {formatDate(order.createdAt)}
+                    {order.address}
                   </td>
 
                   <td className="px-6 py-4">
@@ -83,11 +81,9 @@ const OrderTable = ({ orders, role, onUpdateStatus }) => {
                           value={currentSelected}
                           onChange={(e) => handleDropdownChange(order.id, e.target.value)}
                         >
-                          <option value="ชำระเงินแล้ว">ชำระเงินแล้ว</option>
-                          <option value="กำลังเตรียมจัดส่ง">กำลังเตรียมจัดส่ง</option>
-                          <option value="จัดส่งแล้ว">จัดส่งแล้ว</option>
-                          <option value="สำเร็จ">สำเร็จ</option>
-                          <option value="ยกเลิก">ยกเลิก</option>
+                          <option value="paid">ชำระเงินแล้ว</option>
+                          <option value="shipped">จัดส่งแล้ว</option>
+                          <option value="completed">สำเร็จ</option>
                         </select>
 
                         {/* 🌟 ปุ่มกดยืนยัน (Confirm) */}
