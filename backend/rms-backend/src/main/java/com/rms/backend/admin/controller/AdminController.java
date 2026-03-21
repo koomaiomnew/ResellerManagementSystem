@@ -2,22 +2,15 @@ package com.rms.backend.admin.controller;
 
 import com.rms.backend.admin.dto.AdminResellerReq;
 import com.rms.backend.admin.service.AdminService;
-import com.rms.backend.orders.entity.OrderEntity;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
-@CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -32,14 +25,12 @@ public class AdminController {
 
         StreamingResponseBody responseBody = outputStream -> {
             try {
-                // โยน OutputStream ไปให้ Service จัดการเขียนให้เสร็จสรรพ!
                 adminService.exportOrdersToCsv(year, month, outputStream);
             } catch (Exception e) {
                 System.err.println("❌ เกิดข้อผิดพลาดตอน Stream ข้อมูล: " + e.getMessage());
                 e.printStackTrace();
             }
         };
-
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=orders_" + year + "_" + month + ".csv")
                 .contentType(MediaType.parseMediaType("text/csv; charset=utf-8"))

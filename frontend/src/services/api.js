@@ -1,25 +1,21 @@
 import axios from 'axios';
 
 const api = axios.create({
- 
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://bootcamp04.duckdns.org/api', 
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: 'https://bootcamp04.duckdns.org/api', // ปรับตาม URL จริงของคุณ
 });
 
-// Mock interceptor to inject auth token (ใช้ของเดิมได้เลย)
-api.interceptors.request.use((config) => {
-  const user = localStorage.getItem('user');
-  if (user) {
-    const { token } = JSON.parse(user);
+// 👉 ตัวดักจับ: แอบแนบบัตร VIP (Token) ไปใน Header ทุกครั้ง
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+);
 
 export default api;

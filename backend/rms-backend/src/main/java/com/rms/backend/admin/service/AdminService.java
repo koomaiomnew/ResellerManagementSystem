@@ -33,20 +33,12 @@ public class AdminService {
     @Autowired private ProductRepository productRepository;
     @Autowired private ShopRepository shopRepository;
 
-    @Transactional(readOnly = true) // สำคัญมาก ห้ามลบ!
+    @Transactional(readOnly = true)
     public void exportOrdersToCsv(int year, int month, OutputStream outputStream) {
-
-        // โค้ดวนลูปทั้งหมดถูกย้ายมาอยู่ที่นี่ เพื่อไม่ให้ Database โดนปิดก่อน
         try (Stream<OrderEntity> orderStream = orderRepository.streamOrdersByMonth(year, month);
              PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))) {
-
-            // 1. เขียน BOM กันภาษาไทยเป็นต่างดาว
             writer.write('\ufeff');
-
-            // 2. เขียน Header ของ CSV
             writer.println("Order Number,Customer Name,Total Amount,Reseller Profit,Status,Created At");
-
-            // 3. วนลูป Stream ดึงข้อมูลมาเขียน (คราวนี้ Database ไม่ปิดหนีแน่นอน)
             orderStream.forEach(order -> {
                 writer.println(String.format("%s,%s,%s,%s,%s,%s",
                         order.getOrderNumber(),
@@ -58,7 +50,6 @@ public class AdminService {
             });
 
             writer.flush();
-
         } catch (Exception e) {
             throw new RuntimeException("เกิดข้อผิดพลาดในการเขียน CSV", e);
         }
@@ -66,7 +57,6 @@ public class AdminService {
 
     public AdminReq getAdminDashboard() {
         long totalOrders = orderRepository.count();
-
         BigDecimal totalSales = orderRepository.sumTotalSales();
         BigDecimal totalProfit = orderRepository.sumTotalProfit();
 
@@ -76,10 +66,10 @@ public class AdminService {
         long totalResellers = userRepository.countByRole("reseller");
         long totalProducts = productRepository.count();
 
-        // 🌟 ดึงข้อมูลกราฟรายเดือนจาก Repository
+        //  ดึงข้อมูลกราฟรายเดือนจาก Repository
         List<OrderRepository.MonthlyStats> monthlyStats = orderRepository.getMonthlySalesAndProfit();
 
-        // 🌟 แปลง MonthlyStats ให้เป็น ChartDataDTO ที่หน้าบ้านต้องการ
+        //  แปลง MonthlyStats ให้เป็น ChartDataDTO ที่หน้าบ้านต้องการ
         List<ChartDataDTO> chartData = monthlyStats.stream().map(stat -> {
             BigDecimal sales = stat.getTotalSales() != null ? stat.getTotalSales() : BigDecimal.ZERO;
             BigDecimal profit = stat.getTotalProfit() != null ? stat.getTotalProfit() : BigDecimal.ZERO;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { formatCurrency } from '../../utils/formatter';
 import { showToast } from '../../components/Toast';
+import { orderService } from '../../services/orderService';
 
 const Checkout = () => {
   const location = useLocation();
@@ -45,23 +46,13 @@ const Checkout = () => {
     };
 
     try {
-      const response = await fetch('https://bootcamp04.duckdns.org/api/orders/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-      });
-
-      if (!response.ok) throw new Error('การสั่งซื้อล้มเหลว');
-
-      const responseData = await response.json();
+      const responseData = await orderService.createOrder(orderData);
       showToast('สั่งซื้อสำเร็จ!', 'success');
-      
       navigate('/order-tracking', { state: { orderNumber: responseData.orderNumber } });
-      
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message || 'การสั่งซื้อล้มเหลว', 'error');
     } finally {
-      setLoading(false);
+       setLoading(false);
     }
   };
 
