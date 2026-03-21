@@ -31,33 +31,18 @@ public class AdminController {
             @RequestParam("month") int month) {
 
         StreamingResponseBody responseBody = outputStream -> {
-            try (Stream<OrderEntity> orderStream = adminService.getOrdersStreamByMonth(year, month);
-                 PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))) {
-
-                // 1. เขียน BOM กันภาษาไทยเป็นต่างดาวใน Excel
-                writer.write('\ufeff');
-
-                // 2. เขียน Header ของ CSV
-                writer.println("Order Number,Customer Name,Total Amount,Reseller Profit,Status,Created At");
-
-                // 3. วนลูป Stream ข้อมูล (จะค่อยๆ ดึงมาทีละนิด ไม่โหลด 70,000 แถวลง RAM)
-                orderStream.forEach(order -> {
-                    writer.println(String.format("%s,%s,%s,%s,%s,%s",
-                            order.getOrderNumber(),
-                            order.getCustomerName(),
-                            order.getTotalAmount(),
-                            order.getResellerProfit(),
-                            order.getStatus(),
-                            order.getCreatedAt()));
-                });
-
-                writer.flush();
+            try {
+                // โยน OutputStream ไปให้ Service จัดการเขียนให้เสร็จสรรพ!
+                adminService.exportOrdersToCsv(year, month, outputStream);
+            } catch (Exception e) {
+                System.err.println("❌ เกิดข้อผิดพลาดตอน Stream ข้อมูล: " + e.getMessage());
+                e.printStackTrace();
             }
         };
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=orders_report.csv")
-                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=orders_" + year + "_" + month + ".csv")
+                .contentType(MediaType.parseMediaType("text/csv; charset=utf-8"))
                 .body(responseBody);
     }
 

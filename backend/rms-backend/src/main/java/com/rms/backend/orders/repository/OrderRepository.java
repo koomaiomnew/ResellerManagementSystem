@@ -49,11 +49,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             "ORDER BY EXTRACT(MONTH FROM created_at)",
             nativeQuery = true)
     List<MonthlyStats> getMonthlySalesAndProfit();
-    // ใน OrderRepository.java
+
     @QueryHints(value = @QueryHint(name = HibernateHints.HINT_FETCH_SIZE, value = "1000"))
-    @Query(value = "SELECT * FROM orders WHERE " +
-            "TO_CHAR(created_at, 'YYYY-MM') = :year || '-' || LPAD(:month || '', 2, '0') " +
-            "ORDER BY created_at DESC",
-            nativeQuery = true)
+    @Query(value = "SELECT * FROM orders WHERE EXTRACT(YEAR FROM created_at) = :year AND EXTRACT(MONTH FROM created_at) = :month", nativeQuery = true)
     Stream<OrderEntity> streamOrdersByMonth(@Param("year") int year, @Param("month") int month);
 }
