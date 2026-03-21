@@ -8,7 +8,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is stored in localStorage
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -18,10 +17,21 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const userData = await authService.login(email, password);
-      setUser(userData);
-      localStorage.setItem('currentUser', JSON.stringify(userData));
-      return userData;
+      // 🌟 1. รับค่าที่ส่งมาจาก backend ซึ่งตอนนี้จะเป็น { accessToken: "...", user: {...} }
+      const responseData = await authService.login(email, password);
+      
+      // 🌟 2. ดึงแยก Token และ User ออกจากกัน
+      const { accessToken, user } = responseData;
+
+      // 🌟 3. เซ็ต State ให้หน้าเว็บรู้จัก User (เหมือนเดิม)
+      setUser(user);
+      
+      // 🌟 4. เก็บข้อมูลลง localStorage (แยกเก็บ Token ไว้อีกตัว)
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      localStorage.setItem('token', accessToken); // 👈 สำคัญมาก! เก็บ Token ไว้ส่ง API
+      
+      // 🌟 5. รีเทิร์นแค่ข้อมูล user กลับไปให้ Login.js (Login.js จะได้ไม่ต้องแก้โค้ดเลย)
+      return user; 
     } catch (error) {
       throw error;
     }
@@ -30,6 +40,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('token'); // 🌟 อย่าลืมลบ Token ทิ้งตอนกดออกจากระบบด้วย!
   };
 
   return (

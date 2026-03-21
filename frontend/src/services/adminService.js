@@ -1,19 +1,18 @@
-import api from './api'; // หรือ path ที่คุณ config axios ไว้
+import api from './api';
 
 export const adminService = {
+  // ดึงข้อมูล Dashboard
   getDashboardStats: async () => {
     const response = await api.get('/admin/dashboard');
     return response.data;
   },
-  exportOrdersCSV: async (year, month) => {
-    // ใส่ URL ตรงๆ แบบนี้เลยครับ
-    const url = `https://bootcamp04.duckdns.org/api/admin/export-orders?year=${year}&month=${month}`;
-    
-    const response = await fetch(url, {
-      method: 'GET'
-    });
 
-    if (!response.ok) throw new Error('Export failed');
-    return await response.blob();
+  // Export CSV (ใช้ Axios แทน fetch เพื่อให้แนบ Token อัตโนมัติ)
+  exportOrdersCSV: async (year, month) => {
+    const response = await api.get('/admin/export-orders', {
+      params: { year, month },
+      responseType: 'blob' // บอก Axios ว่าเราจะเอาไฟล์นะ
+    });
+    return response.data; // จะได้ blob มาใช้งานต่อได้เลย
   }
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom'; // ✅ นำเข้า useLocation
 import ProductCard from '../../components/ProductCard';
+import { shopService } from '../../services/shopService';
 import Loading from '../../components/Loading';
 import { showToast } from '../../components/Toast';
 import { formatCurrency } from '../../utils/formatter';
@@ -21,11 +22,7 @@ const PublicShop = () => {
   useEffect(() => {
     const fetchShopProducts = async () => {
       try {
-        setLoading(true);
-        const response = await fetch(`https://bootcamp04.duckdns.org/api/shops/${shopSlug}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        
-        const productsData = await response.json();
+        const productsData = await shopService.getShopProductsBySlug(shopSlug);
         setProducts(productsData);
       } catch (err) {
         console.error("Fetch Error:", err);
@@ -34,12 +31,11 @@ const PublicShop = () => {
         setLoading(false);
       }
     };
-    
+
     if (shopSlug) {
       fetchShopProducts();
     }
-  }, [shopSlug]);
-
+  }, [shopSlug]); 
   const handleAddToCart = (product) => {
     const existingItem = cart.find(item => item.shopProductId === product.shopProductID);
 
