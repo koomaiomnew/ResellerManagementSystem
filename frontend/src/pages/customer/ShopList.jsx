@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-// 🌟 เปลี่ยนการ Import ให้ตรงกับไฟล์ที่มีอยู่จริง
 import { shopService } from '../../services/shopService'; 
 import Loading from '../../components/Loading';
 
@@ -14,7 +13,6 @@ const ShopList = () => {
     const fetchShops = async () => {
       try {
         setLoading(true);
-        // 🌟 เรียกใช้ผ่าน shopService แทน
         const data = await shopService.getAllShops(); 
         setShops(data);
       } catch (err) {
@@ -45,7 +43,8 @@ const ShopList = () => {
               <p className="text-sm text-slate-500 mb-6">@{shop.shopSlug}</p>
               
               <button 
-                onClick={() => navigate(`/shop/${shop.shopSlug}`)}
+                // ✅ ส่ง shop.id พ่วงไปด้วยตอนกดเข้าหน้า PublicShop
+                onClick={() => navigate(`/shop/${shop.shopSlug}`, { state: { shopId: shop.id } })}
                 className="w-full py-2 bg-slate-900 text-white rounded-full font-medium hover:bg-slate-800 transition-colors"
               >
                 เยี่ยมชมร้านค้า
