@@ -33,7 +33,7 @@ const Checkout = () => {
     const formData = new FormData(e.target);
     
     const orderData = {
-      // ✅ ใช้ค่า shopId ที่ส่งมาจากหน้า PublicShop (ค่า 58)
+      // ✅ ตอนนี้จะเป็น ID ของร้านจริงๆ ตามฐานข้อมูลแล้ว!
       shopId: Number(shopId), 
       customerName: formData.get('name'),
       address: formData.get('address'),
@@ -56,7 +56,6 @@ const Checkout = () => {
       const responseData = await response.json();
       showToast('สั่งซื้อสำเร็จ!', 'success');
       
-      // ✅ ส่งไปหน้า Tracking พร้อมเลข Order ล่าสุด
       navigate('/order-tracking', { state: { orderNumber: responseData.orderNumber } });
       
     } catch (err) {

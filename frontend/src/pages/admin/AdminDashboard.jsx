@@ -4,8 +4,20 @@ import { orderService } from "../../services/orderService";
 import { formatCurrency } from "../../utils/formatter";
 import Loading from "../../components/Loading";
 import OrderTable from "../../components/OrderTable";
-// สมมติว่าคุณมี component สำหรับแจ้งเตือน ถ้าไม่มีสามารถคอมเมนต์ออกแล้วใช้ alert() แทนได้
 import { showToast } from "../../components/Toast"; 
+// นำเข้า Recharts สำหรับทำกราฟ
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line
+} from "recharts";
 
 import {
   Wallet,
@@ -14,6 +26,17 @@ import {
   Package,
   Users,
 } from "lucide-react";
+
+// ข้อมูลจำลองสำหรับแสดงกราฟ (เปลี่ยนเป็นข้อมูลจาก API ได้ในอนาคต)
+const mockChartData = [
+  { name: "ม.ค.", sales: 40000, profit: 24000 },
+  { name: "ก.พ.", sales: 30000, profit: 13980 },
+  { name: "มี.ค.", sales: 20000, profit: 9800 },
+  { name: "เม.ย.", sales: 27800, profit: 39080 },
+  { name: "พ.ค.", sales: 18900, profit: 4800 },
+  { name: "มิ.ย.", sales: 23900, profit: 3800 },
+  { name: "ก.ค.", sales: 34900, profit: 4300 },
+];
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -41,11 +64,10 @@ const AdminDashboard = () => {
         });
       }
 
-      // 2. ดึงรายการออเดอร์ (🌟 เรียก getActiveOrders ให้ตรงกับ orderService ของคุณ)
+      // 2. ดึงรายการออเดอร์
       const ordersData = await orderService.getActiveOrders();
       
       if (Array.isArray(ordersData)) {
-        // (ตัวเลือก) กรองสถานะที่ทำเสร็จแล้วออก เพื่อให้แอดมินดูแค่งานที่ต้องทำ
         const hiddenStatuses = ['COMPLETED', 'FAILED', 'CANCELLED', 'FALSE', 'สำเร็จ', 'ยกเลิก'];
         
         const activeOrders = ordersData.filter(order => {
@@ -53,7 +75,6 @@ const AdminDashboard = () => {
           return !hiddenStatuses.includes(currentStatus) && !hiddenStatuses.includes(currentStatus.toUpperCase());
         });
 
-        // 🌟 เรียงลำดับจากออเดอร์ใหม่ไปเก่า และป้องกันแอปพังกรณี createdAt เป็น null
         const sortedOrders = [...activeOrders].sort((a, b) => {
           const dateA = a.createdAt || a.created_at;
           const dateB = b.createdAt || b.created_at;
@@ -68,7 +89,6 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error("❌ Dashboard Error:", err);
-      // โชว์แจ้งเตือนถ้ามี
       if (typeof showToast === 'function' && loading) {
         showToast("ไม่สามารถโหลดข้อมูลได้", "error");
       }
@@ -77,10 +97,9 @@ const AdminDashboard = () => {
     }
   };
 
-  // --- ฟังก์ชันอัปเดตสถานะ (ส่งไปให้ OrderTable ใช้งาน) ---
+  // --- ฟังก์ชันอัปเดตสถานะ ---
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      // 🚀 ยิง API อัปเดตสถานะ
       await orderService.updateStatus(orderId, newStatus);
       
       if (typeof showToast === 'function') {
@@ -89,7 +108,6 @@ const AdminDashboard = () => {
         alert(`อัปเดตออเดอร์ #${orderId} เป็น '${newStatus}' เรียบร้อย`);
       }
       
-      // 🔄 ดึงข้อมูลใหม่ทันทีเพื่อให้ตารางอัปเดตสถานะล่าสุด
       fetchDashboardData(); 
     } catch (err) {
       console.error("Update Status Error:", err);
@@ -186,6 +204,49 @@ const AdminDashboard = () => {
         ))}
       </div>
 
+      {/* ส่วนแสดงกราฟ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* กราฟแท่งแสดงยอดขายและกำไร */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-800 mb-6">ยอดขายและกำไร (รายเดือน)</h3>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={mockChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  cursor={{fill: '#f9fafb'}}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
+                <Bar dataKey="sales" name="ยอดขาย" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="profit" name="กำไร" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* กราฟเส้นแสดงแนวโน้ม */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-800 mb-6">แนวโน้มการเติบโต</h3>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={mockChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
+                <Line type="monotone" dataKey="sales" name="ยอดขาย" stroke="#3b82f6" strokeWidth={3} dot={{r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 6}} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
       {/* ตารางออเดอร์ */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
@@ -205,7 +266,7 @@ const AdminDashboard = () => {
             <OrderTable
               orders={recentOrders}
               role="ADMIN"
-              onUpdateStatus={handleUpdateStatus} // ส่งฟังก์ชันไปให้ปุ่มใน OrderTable ใช้งาน
+              onUpdateStatus={handleUpdateStatus} 
             />
           ) : (
             <div className="text-center py-20">
