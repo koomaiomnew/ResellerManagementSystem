@@ -9,6 +9,9 @@ const AdminProducts = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
+  
+  // 1. เพิ่ม State สำหรับเก็บคำค้นหา
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -68,27 +71,56 @@ const AdminProducts = () => {
     setIsModalOpen(true);
   };
 
+  // 2. กรองข้อมูลสินค้าตามคำค้นหา (ค้นหาจากชื่อสินค้า เล็ก-ใหญ่ได้หมด)
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* 3. ปรับ Layout ส่วนหัวให้มีช่องค้นหา */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold text-gray-800">Manage Products</h2>
-        <button 
-          onClick={openCreateModal}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition font-medium"
-        >
-          + Add New Product
-        </button>
+        
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          {/* ช่อง Input สำหรับค้นหา */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            />
+            <svg 
+              className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+
+          <button 
+            onClick={openCreateModal}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition font-medium whitespace-nowrap"
+          >
+            + Add New Product
+          </button>
+        </div>
       </div>
 
       {loading ? <Loading /> : (
         <ProductTable 
-          products={products} 
+          products={filteredProducts} // 4. ส่งข้อมูลที่ถูกกรองแล้วไปที่ Table
           role="ADMIN" 
           onEdit={openEditModal} 
           onDelete={handleDelete} 
         />
       )}
 
+      {/* Modal (คงเดิม) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
