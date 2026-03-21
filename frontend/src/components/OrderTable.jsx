@@ -30,6 +30,7 @@ const OrderTable = ({ orders, role, onUpdateStatus }) => {
             <tr>
               <th className="px-6 py-2">Order No</th>
               <th className="px-6 py-2">Address</th>
+              <th className="px-6 py-2">Phone</th>
               <th className="px-6 py-2">Customer</th>
               <th className="px-6 py-2">Total</th>
               <th className="px-6 py-2">Status</th>
@@ -50,6 +51,9 @@ const OrderTable = ({ orders, role, onUpdateStatus }) => {
 
                   <td className="px-6 py-4 text-gray-500">
                     {order.address}
+                  </td>
+                  <td className="px-6 py-4 text-gray-500">
+                    {order.phone}
                   </td>
 
                   <td className="px-6 py-4">
@@ -82,7 +86,7 @@ const OrderTable = ({ orders, role, onUpdateStatus }) => {
                           onChange={(e) => handleDropdownChange(order.id, e.target.value)}
                         >
                           <option value="paid">ชำระเงินแล้ว</option>
-                          <option value="shipped">จัดส่งแล้ว</option>
+                          <option value="shipped">กำลังจัดส่ง</option>
                           <option value="completed">สำเร็จ</option>
                         </select>
 

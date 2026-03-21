@@ -9,7 +9,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line
 } from "recharts";
 
-import { Wallet, TrendingUp, ShoppingCart, Package, Users } from "lucide-react";
+// 🌟 เพิ่ม Download icon จาก lucide-react
+import { Wallet, TrendingUp, ShoppingCart, Package, Users, Download, Calendar } from "lucide-react";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -20,16 +21,44 @@ const AdminDashboard = () => {
     totalResellers: 0
   });
   
-  // 🌟 เพิ่ม State สำหรับเก็บข้อมูลกราฟ
   const [chartData, setChartData] = useState([]);
-  
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- ฟังก์ชันดึงข้อมูล Dashboard ---
+  // 🌟 State สำหรับการ Export
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // --- ฟังก์ชัน Export CSV ---
+  const handleExportCSV = async () => {
+  setIsExporting(true);
+  try {
+    // 🌟 เรียกใช้ผ่าน Service ที่คุณเพิ่งเขียน
+    const blob = await adminService.exportOrdersCSV(selectedYear, selectedMonth);
+
+    // สร้างลิงก์ดาวน์โหลด
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `orders_${selectedYear}_${selectedMonth}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    showToast("ดาวน์โหลดสำเร็จ", "success");
+    } catch (error) {
+      showToast(error.message, "error");
+    } finally {
+      setIsExporting(false);
+    } 
+  };
+
   const fetchDashboardData = async () => {
     try {
-      // 1. ดึงสถิติ Dashboard
       const statsData = await adminService.getDashboardStats();
       if (statsData) {
         setStats({
@@ -40,15 +69,13 @@ const AdminDashboard = () => {
           totalResellers: statsData.totalResellers || 0,
         });
 
-        // 🌟 ดึงข้อมูลกราฟจาก API (รอ Backend อัปเดตให้ส่ง chartData มา)
         if (statsData.chartData && Array.isArray(statsData.chartData)) {
           setChartData(statsData.chartData);
         } else {
-          setChartData([]); // ถ้า API ยังไม่ส่งมา ให้กราฟว่างไว้
+          setChartData([]);
         }
       }
 
-      // 2. ดึงรายการออเดอร์
       const ordersData = await orderService.getActiveOrders();
       if (Array.isArray(ordersData)) {
         const hiddenStatuses = ['COMPLETED', 'FAILED', 'CANCELLED', 'FALSE', 'สำเร็จ', 'ยกเลิก'];
@@ -77,19 +104,11 @@ const AdminDashboard = () => {
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
       await orderService.updateStatus(orderId, newStatus);
-      if (typeof showToast === 'function') {
-        showToast(`อัปเดตออเดอร์ #${orderId} เป็น '${newStatus}' เรียบร้อย`, "success");
-      } else {
-        alert(`อัปเดตออเดอร์ #${orderId} เป็น '${newStatus}' เรียบร้อย`);
-      }
+      showToast(`อัปเดตออเดอร์ #${orderId} เรียบร้อย`, "success");
       fetchDashboardData(); 
     } catch (err) {
       console.error("Update Status Error:", err);
-      if (typeof showToast === 'function') {
-        showToast("อัปเดตสถานะไม่สำเร็จ กรุณาลองใหม่", "error");
-      } else {
-        alert("อัปเดตสถานะไม่สำเร็จ");
-      }
+      showToast("อัปเดตสถานะไม่สำเร็จ", "error");
     }
   };
 
@@ -110,9 +129,47 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-6 space-y-8">
-      <div>
-        <h2 className="text-2xl font-black text-gray-800 tracking-tight">ADMIN DASHBOARD</h2>
-        <p className="text-gray-500 text-sm">ภาพรวมระบบและรายการที่ต้องจัดการ</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-gray-800 tracking-tight uppercase">Admin Dashboard</h2>
+          <p className="text-gray-500 text-sm">ภาพรวมระบบและเครื่องมือจัดการข้อมูล</p>
+        </div>
+
+        {/* 🌟 ส่วน Export รายเดือน */}
+        <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl border border-gray-100">
+            <Calendar size={16} className="text-gray-400" />
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="bg-transparent text-sm font-bold text-gray-700 outline-none"
+            >
+              {Array.from({ length: 12 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {new Date(0, i).toLocaleString('th-TH', { month: 'short' })}
+                </option>
+              ))}
+            </select>
+            <select 
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="bg-transparent text-sm font-bold text-gray-700 outline-none border-l pl-2 ml-1"
+            >
+              {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          
+          <button 
+            onClick={handleExportCSV}
+            disabled={isExporting}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white transition-all shadow-sm ${
+              isExporting ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95'
+            }`}
+          >
+            <Download size={16} />
+            {isExporting ? 'Exporting...' : 'Export CSV'}
+          </button>
+        </div>
       </div>
 
       {/* สถิติ 5 กล่อง */}

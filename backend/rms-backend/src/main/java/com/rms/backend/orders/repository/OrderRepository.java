@@ -1,13 +1,17 @@
 package com.rms.backend.orders.repository;
 
 import com.rms.backend.orders.entity.OrderEntity;
+import jakarta.persistence.QueryHint;
+import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 
@@ -45,4 +49,11 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             "ORDER BY EXTRACT(MONTH FROM created_at)",
             nativeQuery = true)
     List<MonthlyStats> getMonthlySalesAndProfit();
+    // ใน OrderRepository.java
+    @QueryHints(value = @QueryHint(name = HibernateHints.HINT_FETCH_SIZE, value = "1000"))
+    @Query(value = "SELECT * FROM orders WHERE " +
+            "TO_CHAR(created_at, 'YYYY-MM') = :year || '-' || LPAD(:month || '', 2, '0') " +
+            "ORDER BY created_at DESC",
+            nativeQuery = true)
+    Stream<OrderEntity> streamOrdersByMonth(@Param("year") int year, @Param("month") int month);
 }

@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,7 +57,7 @@ public class OrderService {
         order.setResellerProfit(BigDecimal.ZERO);
         order.setStatus("paid");
         // บันทึกครั้งแรกเพื่อให้ได้ order.getId()
-        order.setCreatedAt(LocalDateTime.now());
+        order.setCreatedAt(OffsetDateTime.now());
         orderRepository.save(order);
 
         BigDecimal totalAmount = BigDecimal.ZERO;

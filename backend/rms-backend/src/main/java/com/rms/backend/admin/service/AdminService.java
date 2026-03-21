@@ -10,15 +10,16 @@ import com.rms.backend.shops.entity.ShopEntity;
 import com.rms.backend.shops.repository.ShopRepository;
 import com.rms.backend.users.entity.UserEntity;
 import com.rms.backend.users.repository.UserRepository;
-import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class AdminService {
@@ -27,6 +28,11 @@ public class AdminService {
     @Autowired private UserRepository userRepository;
     @Autowired private ProductRepository productRepository;
     @Autowired private ShopRepository shopRepository;
+
+    @Transactional(readOnly = true) // สำคัญมากสำหรับการใช้ Stream
+    public Stream<OrderEntity> getOrdersStreamByMonth(int year, int month) {
+        return orderRepository.streamOrdersByMonth(year, month);
+    }
 
     public AdminReq getAdminDashboard() {
         long totalOrders = orderRepository.count();

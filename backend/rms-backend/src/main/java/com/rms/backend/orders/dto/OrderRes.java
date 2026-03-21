@@ -3,6 +3,7 @@ package com.rms.backend.orders.dto;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Data
@@ -14,7 +15,7 @@ public class OrderRes {
     private String phone;
     private BigDecimal totalAmount;
     private String status;
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
     private List<OrderItemRes> items;
 
     public Long getId() {
@@ -73,11 +74,11 @@ public class OrderRes {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
