@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 
-    Optional<OrderEntity> findByOrderNumber(String orderNumber);
+    Optional<OrderEntity> findByOrderNumber(String orderNumber); // แก้ไขจาก Object เป็น OrderEntity ให้แล้วครับ
 
     @Query("SELECT SUM(o.totalAmount) FROM OrderEntity o")
     BigDecimal sumTotalSales();
@@ -27,4 +27,22 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     List<OrderEntity> findByShopId(Long shopId);
 
     List<OrderEntity> findByStatusNotInOrderByCreatedAtDesc(List<String> statuses);
+
+    public interface MonthlyStats {
+        String getMonthName();
+        BigDecimal getTotalSales();
+        BigDecimal getTotalProfit();
+    }
+
+    // 🌟 แก้ไขเฉพาะจุดนี้: เปลี่ยนชื่อ Column ให้ตรงกับ Entity (total_amount, reseller_profit)
+    @Query(value = "SELECT " +
+            "TO_CHAR(created_at, 'Mon') AS monthName, " +
+            "SUM(total_amount) AS totalSales, " +
+            "SUM(reseller_profit) AS totalProfit " +
+            "FROM orders " +
+            "WHERE created_at >= CURRENT_DATE - INTERVAL '12 months' " + // 🌟 ดึงข้อมูลย้อนหลัง 12 เดือนนับจากวันนี้
+            "GROUP BY TO_CHAR(created_at, 'Mon'), EXTRACT(MONTH FROM created_at) " +
+            "ORDER BY EXTRACT(MONTH FROM created_at)",
+            nativeQuery = true)
+    List<MonthlyStats> getMonthlySalesAndProfit();
 }

@@ -1,5 +1,6 @@
 package com.rms.backend.orders.controller;
 
+import com.rms.backend.admin.service.EmailService;
 import com.rms.backend.orders.dto.OrderReq;
 import com.rms.backend.orders.dto.OrderRes;
 import com.rms.backend.orders.service.OrderService;
@@ -12,6 +13,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private OrderService orderService;
@@ -19,6 +22,7 @@ public class OrderController {
     @PostMapping("/checkout")
     public ResponseEntity<?> checkout(@RequestBody OrderReq req) {
         try {
+            emailService.sendNewOrderAlert();
             return ResponseEntity.ok(orderService.checkout(req));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
