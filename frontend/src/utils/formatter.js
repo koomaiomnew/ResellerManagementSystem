@@ -1,14 +1,14 @@
 export const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('th-TH', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'THB',
   }).format(amount);
 };
 
 export const formatDate = (dateString) => {
   if (!dateString) return '-';
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('th-TH', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
